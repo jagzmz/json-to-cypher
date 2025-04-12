@@ -1,11 +1,12 @@
 {
-  "name": "json-to-cypher",
+  "name": "@jagzmz/json-to-cypher",
   "version": "0.0.1",
   "description": "Convert JSON to Cypher queries",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "private": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,7 +22,9 @@
   "scripts": {
     "test": "jest",
     "build": "tsup --tsconfig tsconfig.app.json",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "publish": "npm publish",
+    "postpublish": "rm *.tgz"
   },
   "keywords": [],
   "author": "",
