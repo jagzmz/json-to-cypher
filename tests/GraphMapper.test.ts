@@ -551,4 +551,49 @@ describe("GraphMapper", () => {
       );
     });
   });
+
+  describe("transformers", () => {
+    it("should apply jsonpath transformer with complex expression", async () => {
+      const transformerSchema: SchemaMapping = {
+        nodes: [
+          {
+            type: "Article",
+            idStrategy: "fromData",
+            idField: "id",
+            properties: [
+              {
+                name: "initials",
+                path: "authorName", // Input field
+                transformerId: "jsonpath",
+                transformerParams: {
+                  // Complex path applied to the value of authorName
+                  path: '$..split(" ").map(word => word[0]).join("")',
+                },
+              },
+            ],
+          },
+        ],
+        relationships: [],
+        iterationMode: "single",
+      };
+
+      const transformerData = {
+        id: "a1",
+        authorName: "Jane Doe",
+      };
+
+      const transformerMapper = new GraphMapper(transformerSchema);
+      const { queries } = await transformerMapper.generateQueries(
+        transformerData
+      );
+
+      // Expect 1 query: CREATE Article
+      expect(queries.length).toBe(1);
+
+      // Check the node properties
+      expectCreateNodeQuery(queries[0], "Article", "a1", {
+        initials: "JD", // Expect the transformed initials
+      });
+    });
+  });
 });

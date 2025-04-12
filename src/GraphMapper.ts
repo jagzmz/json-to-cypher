@@ -83,8 +83,37 @@ export class GraphMapper {
 
     // Add JSONPath transformer
     this.transformerRegistry.register("jsonpath", (value, context, params) => {
-      if (!params?.path) return undefined;
-      return this.evaluateContextPath(params.path, { data: value, context });
+      if (!params?.path || value === undefined || value === null) return undefined;
+      try {
+        // Attempt to evaluate the path as a JSONPath expression first
+        // This allows using paths like `$data.someField` if value is an object
+        let result = JSONPath({ path: params.path, json: value, wrap: false });
+
+        // If JSONPath returns undefined or the original value (meaning it might not be a path but an expression)
+        // and the path contains JS-like functions, try evaluating it as an expression.
+        // Caution: This uses eval-like behavior and should be used carefully.
+        if (
+          (result === undefined || result === value) &&
+          (params.path.includes("(") || params.path.includes("["))
+        ) {
+          // Clean the path expression, removing the leading $. or $..
+          const expression = params.path.replace(/^\$..?/, '');
+          // Create a function to evaluate the expression safely with the value as context
+          // We use `$` as the variable name representing the input value.
+          // The expression should be applied directly to the input value $
+          const functionBody = `return $${expression.startsWith('[') ? '' : '.'}${expression};`;
+          const evaluator = new Function("$", functionBody);
+          result = evaluator(value);
+        }
+        return result;
+      } catch (e) {
+        console.error(
+          `Error evaluating JSONPath transformer path "${params.path}" on value:`,
+          value,
+          e
+        );
+        return undefined; // Return undefined on error
+      }
     });
   }
 
