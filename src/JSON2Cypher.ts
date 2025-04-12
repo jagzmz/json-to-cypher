@@ -1,5 +1,5 @@
-import { JSONPath } from "jsonpath-plus";
-import { DateTime, int } from "neo4j-driver-core";
+import { JSONPath } from "jsonpath-plus-browser";
+import * as neo4j from "neo4j-driver";
 import { v4 as uuidv4 } from "uuid";
 import { VariableGenerator } from "./VariableGenerator";
 import {
@@ -556,7 +556,7 @@ export class JSON2Cypher {
     const result: Record<string, any> = {};
 
     // Add createdAt timestamp to all nodes
-    result.createdAt = DateTime.fromStandardDate(new Date());
+    result.createdAt = neo4j.DateTime.fromStandardDate(new Date());
 
     for (const propDef of nodeDef.properties) {
       let value;
@@ -604,7 +604,7 @@ export class JSON2Cypher {
       case "integer":
       case "int":
         // return Number.isFinite(value) ? Math.floor(value) : parseInt(value, 10);
-        return int(value);
+        return neo4j.int(value);
       case "float":
       case "double":
         return Number.isFinite(value) ? value : parseFloat(value);

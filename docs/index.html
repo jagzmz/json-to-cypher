@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON2Cypher Mapper</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="index.global.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/neo4j-driver@5.28.1/lib/browser/neo4j-web.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.25.0/dist/cytoscape.min.js"></script>
+    <!-- <script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.9.2/dist/jsoneditor.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.9.2/dist/jsoneditor.min.css" rel="stylesheet" type="text/css">
+    <script src="advanced-examples.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>JSON2Cypher Mapper</h1>
+        <p>Transform JSON data into Neo4j Cypher queries</p>
+        <div class="examples-selector">
+            <label for="example-select">Choose an example:</label>
+            <select id="example-select">
+                <option value="basic">Basic Example (Users & Companies)</option>
+                <option value="postsWithComments">Blog Posts with Comments</option>
+                <option value="productsWithCategories">Products with Categories and Tags</option>
+                <option value="orders">Orders with Customers and Products</option>
+            </select>
+            <button id="load-example">Load Selected Example</button>
+        </div>
+    </header>
+
+    <main class="app-container">
+        <!-- Top section: JSON Data and Schema -->
+        <div class="input-row">
+            <div class="input-column">
+                <div class="card">
+                    <h2>JSON Data</h2>
+                    <div id="json-editor" class="json-editor-container"></div>
+                    <button id="load-sample-data">Load Sample Data</button>
+                </div>
+            </div>
+            
+            <div class="input-column">
+                <div class="card">
+                    <h2>Schema Definition</h2>
+                    <div id="schema-editor" class="json-editor-container"></div>
+                    <button id="load-sample-schema">Load Sample Schema</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button id="generate-queries">Generate Cypher Queries</button>
+        </div>
+
+        <!-- Middle section: Graph Visualization -->
+        <div class="visualization-row">
+            <div class="card">
+                <h2>Graph Visualization</h2>
+                <div id="graph-vis" class="graph-container"></div>
+            </div>
+        </div>
+
+        <!-- Bottom section: Queries -->
+        <div class="queries-row">
+            <div class="card">
+                <h2 id="queries-heading">Generated Cypher Queries</h2>
+                <div id="cypher-output" class="output-area"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Powered by <a href="https://github.com/jagzmz/json-to-cypher" target="_blank">JSON2Cypher</a> library</p>
+    </footer>
+</body>
+</html> 
