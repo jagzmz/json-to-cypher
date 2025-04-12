@@ -8,6 +8,8 @@
 
 **Think of it as a JSON2Cypher translator:** It takes your JSON data and schema definition, and outputs the Cypher queries needed to represent that data in a Neo4j graph.
 
+🎮 Play with the [JSON2Cypher Demo](https://jagzmz.github.io/json-to-cypher/playground/) to see it in action!
+
 ## Key Features ✅
 
 *   **Declarative Schema:** Define your target graph structure (nodes, properties, relationships) in a configuration object.
