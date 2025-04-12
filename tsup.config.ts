@@ -5,10 +5,10 @@ export default defineConfig({
   format: ['cjs', 'esm'], // Output formats
   dts: true, // Generate TypeScript declaration files
   splitting: false, // Prevent code splitting into chunks
-  sourcemap: true, // Generate sourcemaps
+  sourcemap: process.env.NODE_ENV === 'development', // Generate sourcemaps
   clean: true, // Clean output directory before build
-  minify: true,
-  treeshake: true,
+  minify: process.env.NODE_ENV !== 'development',
+  treeshake: process.env.NODE_ENV !== 'development',
   shims: true,
-  external: ['crypto']
+  keepNames: false,
 }); 

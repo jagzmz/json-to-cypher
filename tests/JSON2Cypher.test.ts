@@ -1,7 +1,10 @@
 import { JSON2Cypher } from "../src/JSON2Cypher";
-import { TransformerRegistry, type SchemaMapping } from "../src/TransformerRegistry";
+import {
+  TransformerRegistry,
+  type SchemaMapping,
+} from "../src/TransformerRegistry";
 import { VariableGenerator } from "../src/VariableGenerator";
-import { isDateTime, isInt, int } from "neo4j-driver-lite";
+import { isDateTime, int } from "neo4j-driver-core";
 import {
   expectNodeProps,
   expectRelationshipProps,
@@ -334,9 +337,9 @@ describe("JSON2Cypher", () => {
       expect(orgNodes.length).toBe(2); // Two distinct org objects mapped
 
       // Verify first org node - Check properties more directly
-      const org1Props = orgNodes.find((node: any) => node.name === "Acme Inc")
+      const org1Props = orgNodes.find((node: any) => node.name === "Acme Inc");
       expect(org1Props).toBeDefined();
-      if(org1Props) {
+      if (org1Props) {
         expectNodeProps(org1Props, { name: "Acme Inc", size: int(500) }); // Don't check ID here
       }
 
