@@ -385,7 +385,7 @@ constructor(
 
 ## Dive Deeper: Examples in Tests 🔍🎯
 
-**The most comprehensive examples are in the test suite!** Explore `tests/JSON-to-Cypher.test.ts` to see various scenarios in action, including:
+**The most comprehensive examples are in the test suite!** Explore `tests/GraphMapper.test` to see various scenarios in action, including:
 
 *   Different ID strategies
 *   Type conversions
