@@ -1,5 +1,5 @@
 import { JSONPath } from "jsonpath-plus";
-import { DateTime, int } from "neo4j-driver";
+import { DateTime, int } from "neo4j-driver-lite";
 import { v4 as uuidv4 } from "uuid";
 import { VariableGenerator } from "./VariableGenerator";
 import {

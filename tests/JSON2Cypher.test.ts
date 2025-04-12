@@ -1,7 +1,7 @@
 import { JSON2Cypher } from "../src/JSON2Cypher";
 import { TransformerRegistry, type SchemaMapping } from "../src/TransformerRegistry";
 import { VariableGenerator } from "../src/VariableGenerator";
-import { isDateTime, isInt, int } from "neo4j-driver";
+import { isDateTime, isInt, int } from "neo4j-driver-lite";
 import {
   expectNodeProps,
   expectRelationshipProps,

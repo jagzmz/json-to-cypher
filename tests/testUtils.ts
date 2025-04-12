@@ -1,4 +1,4 @@
-import { isDateTime, isInt, int } from "neo4j-driver";
+import { isDateTime, isInt, int } from "neo4j-driver-lite";
 
 // Helper to check common node properties including createdAt
 export const expectNodeProps = (
