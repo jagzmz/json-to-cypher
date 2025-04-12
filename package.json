@@ -1,7 +1,7 @@
 {
-  "name": "graph-mapper-neo4j",
-  "version": "1.0.0",
-  "description": "",
+  "name": "json-to-cypher",
+  "version": "0.0.1",
+  "description": "Convert JSON to Cypher queries",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
