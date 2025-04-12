@@ -555,6 +555,7 @@ export class JSON2Cypher {
         return String(idValue); // Ensure ID is a string
       case "uuid":
       default:
+        // The browser build will replace this via replace-uuid plugin
         return uuid.v4();
     }
   }

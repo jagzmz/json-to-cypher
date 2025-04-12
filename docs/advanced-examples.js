@@ -142,113 +142,109 @@ const productsWithCategoriesSchema = {
 // Example 3: Complex Relationships - Orders with Products and Customers
 const ordersData = [
     {
-        orderId: "o1",
-        date: "2023-05-15",
-        customer: {
-            customerId: "cust1",
-            name: "John Doe",
-            email: "john@example.com"
-        },
-        items: [
-            { productId: "prod1", quantity: 1, price: 799.99 },
-            { productId: "prod3", quantity: 2, price: 89.99 }
-        ],
-        status: "completed"
+      orderId: "o1",
+      date: "2023-05-15",
+      customer: {
+        customerId: "cust1",
+        name: "John Doe",
+        email: "john@example.com",
+      },
+      items: [
+        { productId: "prod1", quantity: 1, price: 799.99 },
+        { productId: "prod3", quantity: 2, price: 89.99 },
+      ],
+      status: "completed",
     },
     {
-        orderId: "o2",
-        date: "2023-05-16",
-        customer: {
-            customerId: "cust2",
-            name: "Jane Smith",
-            email: "jane@example.com"
-        },
-        items: [
-            { productId: "prod2", quantity: 1, price: 1299.99 }
-        ],
-        status: "processing"
-    }
-];
+      orderId: "o2",
+      date: "2023-05-16",
+      customer: {
+        customerId: "cust2",
+        name: "Jane Smith",
+        email: "jane@example.com",
+      },
+      items: [{ productId: "prod2", quantity: 1, price: 1299.99 }],
+      status: "processing",
+    },
+  ];
 
 const ordersSchema = {
-    iterationMode: 'collection',
+    iterationMode: "collection",
     nodes: [
-        {
-            type: 'Order',
-            idStrategy: 'fromData',
-            idField: 'orderId',
-            properties: [
-                { name: 'date', path: 'date', type: 'date' },
-                { name: 'status', path: 'status' }
-            ]
-        },
-        {
-            type: 'Customer',
-            idStrategy: 'fromData',
-            idField: 'customer.customerId',
-            properties: [
-                { name: 'name', path: 'customer.name' },
-                { name: 'email', path: 'customer.email' }
-            ]
-        },
-        {
-            type: 'Status',
-            idStrategy: 'fromData',
-            idField: 'status',
-            isReference: true,
-            properties: [
-                { name: 'name', path: 'status' }
-            ]
-        }
+      {
+        type: "Order",
+        idStrategy: "fromData",
+        idField: "orderId",
+        properties: [
+          { name: "date", path: "date", type: "date" },
+          { name: "status", path: "status" },
+        ],
+      },
+      {
+        type: "Customer",
+        idStrategy: "fromData",
+        idField: "customer.customerId",
+        properties: [
+          { name: "name", path: "customer.name" },
+          { name: "email", path: "customer.email" },
+        ],
+      },
+      {
+        type: "Status",
+        idStrategy: "fromData",
+        idField: "status",
+        isReference: true,
+        properties: [{ name: "name", path: "status" }],
+      },
     ],
     relationships: [
-        {
-            type: 'PLACED_BY',
-            from: { path: '$current.Order.id' },
-            to: { path: '$current.Customer.id' }
-        },
-        {
-            type: 'HAS_STATUS',
-            from: { path: '$current.Order.id' },
-            to: { path: '$current.Status.id' }
-        }
+      {
+        type: "PLACED_BY",
+        from: { path: "$current.Order.id" },
+        to: { path: "$current.Customer.id" },
+      },
+      {
+        type: "HAS_STATUS",
+        from: { path: "$current.Order.id" },
+        to: { path: "$current.Status.id" },
+      },
     ],
     subMappings: [
-        {
-            sourceDataPath: 'items',
-            iterationMode: 'collection',
-            nodes: [
-                {
-                    type: 'OrderItem',
-                    idStrategy: 'uuid',
-                    properties: [
-                        { name: 'quantity', path: 'quantity', type: 'integer' },
-                        { name: 'price', path: 'price', type: 'float' }
-                    ]
-                },
-                {
-                    type: 'Product',
-                    idStrategy: 'fromData',
-                    idField: 'productId',
-                    isReference: true,
-                    properties: [] // Products already defined elsewhere
-                }
+      {
+        sourceDataPath: "items",
+        iterationMode: "collection",
+        nodes: [
+          {
+            type: "OrderItem",
+            idStrategy: "uuid",
+            properties: [
+              { name: "quantity", path: "quantity", type: "integer" },
+              { name: "price", path: "price", type: "float" },
             ],
-            relationships: [
-                {
-                    type: 'CONTAINS',
-                    from: { path: '$parent.Order.id' },
-                    to: { path: '$current.OrderItem.id' }
-                },
-                {
-                    type: 'IS_PRODUCT',
-                    from: { path: '$current.OrderItem.id' },
-                    to: { path: '$current.Product.id' }
-                }
-            ]
-        }
-    ]
-};
+          },
+          {
+            type: "Product", // Assuming Product nodes exist or are merged
+            idStrategy: "fromData",
+            idField: "productId",
+            isReference: true,
+            properties: [], // No properties needed if only merging
+          },
+        ],
+        relationships: [
+          {
+            type: "CONTAINS",
+            from: { path: "$parent.Order.id" },
+            to: { path: "$current.OrderItem.id" },
+          },
+          {
+            type: "IS_PRODUCT",
+            from: { path: "$current.OrderItem.id" },
+            to: { path: "$data.productId", nodeType: "Product" },
+          },
+        ],
+      },
+    ],
+  };
 
 // Make these examples available to the main script
 window.advancedExamples = {

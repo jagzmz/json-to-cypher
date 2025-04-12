@@ -717,5 +717,206 @@ describe("JSON2Cypher", () => {
       expect(laptopApplianceRel).toBeDefined();
       expectRelationshipQuery(laptopApplianceRel!, 'HAS_TAG', { from: 'prod2', to: 'appliance' });
     });
+
+    it("should handle 'Orders with Customers and Products' using uuid for OrderItems", async () => {
+      // Data and schema from docs/advanced-examples.js
+      const ordersData = [
+        {
+          "orderId": "o1",
+          "date": "2023-05-15",
+          "customer": {
+            "customerId": "cust1",
+            "name": "John Doe",
+            "email": "john@example.com"
+          },
+          "items": [
+            {
+              "productId": "prod1",
+              "quantity": 1,
+              "price": 799.99
+            },
+            {
+              "productId": "prod3",
+              "quantity": 2,
+              "price": 89.99
+            }
+          ],
+          "status": "completed"
+        },
+        {
+          "orderId": "o2",
+          "date": "2023-05-16",
+          "customer": {
+            "customerId": "cust2",
+            "name": "Jane Smith",
+            "email": "jane@example.com"
+          },
+          "items": [
+            {
+              "productId": "prod2",
+              "quantity": 1,
+              "price": 1299.99
+            }
+          ],
+          "status": "processing"
+        }
+      ]
+
+      const ordersSchema: SchemaMapping ={
+        "iterationMode": "collection",
+        "nodes": [
+          {
+            "type": "Order",
+            "idStrategy": "fromData",
+            "idField": "orderId",
+            "properties": [
+              {
+                "name": "date",
+                "path": "date",
+                "type": "date"
+              },
+              {
+                "name": "status",
+                "path": "status"
+              }
+            ]
+          },
+          {
+            "type": "Customer",
+            "idStrategy": "fromData",
+            "idField": "customer.customerId",
+            "properties": [
+              {
+                "name": "name",
+                "path": "customer.name"
+              },
+              {
+                "name": "email",
+                "path": "customer.email"
+              }
+            ]
+          },
+          {
+            "type": "Status",
+            "idStrategy": "fromData",
+            "idField": "status",
+            "isReference": true,
+            "properties": [
+              {
+                "name": "name",
+                "path": "status"
+              }
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "PLACED_BY",
+            "from": {
+              "path": "$current.Order.id"
+            },
+            "to": {
+              "path": "$current.Customer.id"
+            }
+          },
+          {
+            "type": "HAS_STATUS",
+            "from": {
+              "path": "$current.Order.id"
+            },
+            "to": {
+              "path": "$current.Status.id"
+            }
+          }
+        ],
+        "subMappings": [
+          {
+            "sourceDataPath": "items",
+            "iterationMode": "collection",
+            "nodes": [
+              {
+                "type": "OrderItem",
+                "idStrategy": "uuid",
+                "properties": [
+                  {
+                    "name": "quantity",
+                    "path": "quantity",
+                    "type": "integer"
+                  },
+                  {
+                    "name": "price",
+                    "path": "price",
+                    "type": "float"
+                  }
+                ]
+              },
+              {
+                "type": "Product",
+                "idStrategy": "fromData",
+                "idField": "productId",
+                "isReference": true,
+                "properties": []
+              }
+            ],
+            "relationships": [
+              {
+                "type": "CONTAINS",
+                "from": {
+                  "path": "$parent.Order.id"
+                },
+                "to": {
+                  "path": "$current.OrderItem.id"
+                }
+              },
+              {
+                "type": "IS_PRODUCT",
+                "from": {
+                  "path": "$current.OrderItem.id"
+                },
+                "to": {
+                  "path": "$data.productId",
+                  "nodeType": "Product"
+                }
+              }
+            ]
+          }
+        ]
+      }
+
+      const mapper = new JSON2Cypher(ordersSchema);
+      const { queries } = await mapper.generateQueries(ordersData);
+
+      // --- Assertions ---
+      // Expected: 2 Orders + 2 Customers + 2 Statuses + 3 OrderItems + 3 Products + 2 PLACED_BY + 2 HAS_STATUS + 3 CONTAINS + 3 IS_PRODUCT = 22
+      expect(queries.length).toBe(22);
+
+      // Verify counts of each type
+      const orderQueries = queries.filter(q => q.query.includes(':Order') && !q.query.includes('OrderItem'));
+      const customerQueries = queries.filter(q => q.query.includes(':Customer'));
+      const statusQueries = queries.filter(q => q.query.includes(':Status'));
+      const orderItemQueries = queries.filter(q => q.query.includes(':OrderItem'));
+      const productQueries = queries.filter(q => q.query.includes(':Product'));
+      const placedByRels = queries.filter(q => q.query.includes(':PLACED_BY'));
+      const hasStatusRels = queries.filter(q => q.query.includes(':HAS_STATUS'));
+      const containsRels = queries.filter(q => q.query.includes(':CONTAINS'));
+      const isProductRels = queries.filter(q => q.query.includes(':IS_PRODUCT'));
+
+      expect(orderQueries.length).toBe(2);
+      expect(customerQueries.length).toBe(2);
+      expect(statusQueries.length).toBe(2); // completed, processing (merged)
+      expect(orderItemQueries.length).toBe(3); // uuid generated
+      expect(productQueries.length).toBe(3); // prod1, prod3, prod2 (merged)
+      expect(placedByRels.length).toBe(2);
+      expect(hasStatusRels.length).toBe(2);
+      expect(containsRels.length).toBe(3);
+      expect(isProductRels.length).toBe(3);
+
+      // Check that OrderItems use CREATE (due to uuid)
+      expect(orderItemQueries.every(q => q.query.includes('CREATE'))).toBeTruthy();
+
+      // Check that Products and Statuses use MERGE (due to isReference)
+      expect(productQueries.every(q => q.query.includes('MERGE'))).toBeTruthy();
+      expect(statusQueries.every(q => q.query.includes('MERGE'))).toBeTruthy();
+    });
   });
 });

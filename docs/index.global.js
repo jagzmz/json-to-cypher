@@ -1,10 +1,1210 @@
-var JSON2Cypher=(function(exports,crypto){'use strict';function D(e){"@babel/helpers - typeof";return typeof Symbol=="function"&&typeof Symbol.iterator=="symbol"?D=function(t){return typeof t}:D=function(t){return t&&typeof Symbol=="function"&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t},D(e)}function ot(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}function at(e,t){if(typeof t!="function"&&t!==null)throw new TypeError("Super expression must either be null or a function");e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,writable:true,configurable:true}}),t&&M(e,t);}function j(e){return j=Object.setPrototypeOf?Object.getPrototypeOf:function(r){return r.__proto__||Object.getPrototypeOf(r)},j(e)}function M(e,t){return M=Object.setPrototypeOf||function(i,n){return i.__proto__=n,i},M(e,t)}function Z(){if(typeof Reflect>"u"||!Reflect.construct||Reflect.construct.sham)return  false;if(typeof Proxy=="function")return  true;try{return Boolean.prototype.valueOf.call(Reflect.construct(Boolean,[],function(){})),!0}catch{return  false}}function x(e,t,r){return Z()?x=Reflect.construct:x=function(n,o,a){var u=[null];u.push.apply(u,o);var s=Function.bind.apply(n,u),f=new s;return a&&M(f,a.prototype),f},x.apply(null,arguments)}function st(e){return Function.toString.call(e).indexOf("[native code]")!==-1}function Q(e){var t=typeof Map=="function"?new Map:void 0;return Q=function(i){if(i===null||!st(i))return i;if(typeof i!="function")throw new TypeError("Super expression must either be null or a function");if(typeof t<"u"){if(t.has(i))return t.get(i);t.set(i,n);}function n(){return x(i,arguments,j(this).constructor)}return n.prototype=Object.create(i.prototype,{constructor:{value:n,enumerable:false,writable:true,configurable:true}}),M(n,i)},Q(e)}function ut(e){if(e===void 0)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return e}function ft(e,t){return t&&(typeof t=="object"||typeof t=="function")?t:ut(e)}function ct(e){var t=Z();return function(){var i=j(e),n;if(t){var o=j(this).constructor;n=Reflect.construct(i,arguments,o);}else n=i.apply(this,arguments);return ft(this,n)}}function K(e){return lt(e)||pt(e)||tt(e)||ht()}function lt(e){if(Array.isArray(e))return H(e)}function pt(e){if(typeof Symbol<"u"&&Symbol.iterator in Object(e))return Array.from(e)}function tt(e,t){if(e){if(typeof e=="string")return H(e,t);var r=Object.prototype.toString.call(e).slice(8,-1);if(r==="Object"&&e.constructor&&(r=e.constructor.name),r==="Map"||r==="Set")return Array.from(e);if(r==="Arguments"||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(r))return H(e,t)}}function H(e,t){(t==null||t>e.length)&&(t=e.length);for(var r=0,i=new Array(t);r<t;r++)i[r]=e[r];return i}function ht(){throw new TypeError(`Invalid attempt to spread non-iterable instance.
-In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`)}function yt(e,t){var r;if(typeof Symbol>"u"||e[Symbol.iterator]==null){if(Array.isArray(e)||(r=tt(e))||t){r&&(e=r);var i=0,n=function(){};return {s:n,n:function(){return i>=e.length?{done:true}:{done:false,value:e[i++]}},e:function(s){throw s},f:n}}throw new TypeError(`Invalid attempt to iterate non-iterable instance.
-In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`)}var o=true,a=false,u;return {s:function(){r=e[Symbol.iterator]();},n:function(){var s=r.next();return o=s.done,s},e:function(s){a=true,u=s;},f:function(){try{!o&&r.return!=null&&r.return();}finally{if(a)throw u}}}}var b=Object.prototype.hasOwnProperty;function C(e,t){return e=e.slice(),e.push(t),e}function R(e,t){return t=t.slice(),t.unshift(e),t}var dt=function(e){at(r,e);var t=ct(r);function r(i){var n;return ot(this,r),n=t.call(this,'JSONPath should not be called with "new" (it prevents return of (unwrapped) scalar values)'),n.avoidNew=true,n.value=i,n.name="NewError",n}return r}(Q(Error));function p(e,t,r,i,n){if(!(this instanceof p))try{return new p(e,t,r,i,n)}catch(s){if(!s.avoidNew)throw s;return s.value}typeof e=="string"&&(n=i,i=r,r=t,t=e,e=null);var o=e&&D(e)==="object";if(e=e||{},this.json=e.json||r,this.path=e.path||t,this.resultType=e.resultType||"value",this.flatten=e.flatten||false,this.wrap=b.call(e,"wrap")?e.wrap:true,this.sandbox=e.sandbox||{},this.preventEval=e.preventEval||false,this.parent=e.parent||null,this.parentProperty=e.parentProperty||null,this.callback=e.callback||i||null,this.otherTypeCallback=e.otherTypeCallback||n||function(){throw new TypeError("You must supply an otherTypeCallback callback option with the @other() operator.")},e.autostart!==false){var a={path:o?e.path:t};o?"json"in e&&(a.json=e.json):a.json=r;var u=this.evaluate(a);if(!u||D(u)!=="object")throw new dt(u);return u}}p.prototype.evaluate=function(e,t,r,i){var n=this,o=this.parent,a=this.parentProperty,u=this.flatten,s=this.wrap;if(this.currResultType=this.resultType,this.currPreventEval=this.preventEval,this.currSandbox=this.sandbox,r=r||this.callback,this.currOtherTypeCallback=i||this.otherTypeCallback,t=t||this.json,e=e||this.path,e&&D(e)==="object"&&!Array.isArray(e)){if(!e.path&&e.path!=="")throw new TypeError('You must supply a "path" property when providing an object argument to JSONPath.evaluate().');if(!b.call(e,"json"))throw new TypeError('You must supply a "json" property when providing an object argument to JSONPath.evaluate().');var f=e;t=f.json,u=b.call(e,"flatten")?e.flatten:u,this.currResultType=b.call(e,"resultType")?e.resultType:this.currResultType,this.currSandbox=b.call(e,"sandbox")?e.sandbox:this.currSandbox,s=b.call(e,"wrap")?e.wrap:s,this.currPreventEval=b.call(e,"preventEval")?e.preventEval:this.currPreventEval,r=b.call(e,"callback")?e.callback:r,this.currOtherTypeCallback=b.call(e,"otherTypeCallback")?e.otherTypeCallback:this.currOtherTypeCallback,o=b.call(e,"parent")?e.parent:o,a=b.call(e,"parentProperty")?e.parentProperty:a,e=e.path;}if(o=o||null,a=a||null,Array.isArray(e)&&(e=p.toPathString(e)),!(!e&&e!==""||!t)){var c=p.toPathArray(e);c[0]==="$"&&c.length>1&&c.shift(),this._hasParentSelector=null;var l=this._trace(c,t,["$"],o,a,r).filter(function(y){return y&&!y.isParentSelector});return l.length?!s&&l.length===1&&!l[0].hasArrExpr?this._getPreferredOutput(l[0]):l.reduce(function(y,h){var g=n._getPreferredOutput(h);return u&&Array.isArray(g)?y=y.concat(g):y.push(g),y},[]):s?[]:void 0}};p.prototype._getPreferredOutput=function(e){var t=this.currResultType;switch(t){case "all":{var r=Array.isArray(e.path)?e.path:p.toPathArray(e.path);return e.pointer=p.toPointer(r),e.path=typeof e.path=="string"?e.path:p.toPathString(e.path),e}case "value":case "parent":case "parentProperty":return e[t];case "path":return p.toPathString(e[t]);case "pointer":return p.toPointer(e.path);default:throw new TypeError("Unknown result type")}};p.prototype._handleCallback=function(e,t,r){if(t){var i=this._getPreferredOutput(e);e.path=typeof e.path=="string"?e.path:p.toPathString(e.path),t(i,r,e);}};p.prototype._trace=function(e,t,r,i,n,o,a,u){var s=this,f;if(!e.length)return f={path:r,value:t,parent:i,parentProperty:n,hasArrExpr:a},this._handleCallback(f,o,"value"),f;var c=e[0],l=e.slice(1),y=[];function h(v){Array.isArray(v)?v.forEach(function(P){y.push(P);}):y.push(v);}if((typeof c!="string"||u)&&t&&b.call(t,c))h(this._trace(l,t[c],C(r,c),t,c,o,a));else if(c==="*")this._walk(c,l,t,r,i,n,o,function(v,P,I,$,A,N,T,O){h(s._trace(R(v,I),$,A,N,T,O,true,true));});else if(c==="..")h(this._trace(l,t,r,i,n,o,a)),this._walk(c,l,t,r,i,n,o,function(v,P,I,$,A,N,T,O){D($[v])==="object"&&h(s._trace(R(P,I),$[v],C(A,v),$,v,O,true));});else {if(c==="^")return this._hasParentSelector=true,{path:r.slice(0,-1),expr:l,isParentSelector:true};if(c==="~")return f={path:C(r,c),value:n,parent:i,parentProperty:null},this._handleCallback(f,o,"property"),f;if(c==="$")h(this._trace(l,t,r,null,null,o,a));else if(/^(\x2D?[0-9]*):(\x2D?[0-9]*):?([0-9]*)$/.test(c))h(this._slice(c,l,t,r,i,n,o));else if(c.indexOf("?(")===0){if(this.currPreventEval)throw new Error("Eval [?(expr)] prevented in JSONPath expression.");this._walk(c,l,t,r,i,n,o,function(v,P,I,$,A,N,T,O){s._eval(P.replace(/^\?\(((?:[\0-\t\x0B\f\x0E-\u2027\u202A-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*?)\)$/,"$1"),$[v],v,A,N,T)&&h(s._trace(R(v,I),$,A,N,T,O,true));});}else if(c[0]==="("){if(this.currPreventEval)throw new Error("Eval [(expr)] prevented in JSONPath expression.");h(this._trace(R(this._eval(c,t,r[r.length-1],r.slice(0,-1),i,n),l),t,r,i,n,o,a));}else if(c[0]==="@"){var g=false,_=c.slice(1,-2);switch(_){case "scalar":(!t||!["object","function"].includes(D(t)))&&(g=true);break;case "boolean":case "string":case "undefined":case "function":D(t)===_&&(g=true);break;case "integer":Number.isFinite(t)&&!(t%1)&&(g=true);break;case "number":Number.isFinite(t)&&(g=true);break;case "nonFinite":typeof t=="number"&&!Number.isFinite(t)&&(g=true);break;case "object":t&&D(t)===_&&(g=true);break;case "array":Array.isArray(t)&&(g=true);break;case "other":g=this.currOtherTypeCallback(t,r,i,n);break;case "null":t===null&&(g=true);break;default:throw new TypeError("Unknown value type "+_)}if(g)return f={path:r,value:t,parent:i,parentProperty:n},this._handleCallback(f,o,"value"),f}else if(c[0]==="`"&&t&&b.call(t,c.slice(1))){var d=c.slice(1);h(this._trace(l,t[d],C(r,d),t,d,o,a,true));}else if(c.includes(",")){var F=c.split(","),w=yt(F),k;try{for(w.s();!(k=w.n()).done;){var U=k.value;h(this._trace(R(U,l),t,r,i,n,o,!0));}}catch(v){w.e(v);}finally{w.f();}}else !u&&t&&b.call(t,c)&&h(this._trace(l,t[c],C(r,c),t,c,o,a,true));}if(this._hasParentSelector)for(var S=0;S<y.length;S++){var W=y[S];if(W&&W.isParentSelector){var E=this._trace(W.expr,t,W.path,i,n,o,a);if(Array.isArray(E)){y[S]=E[0];for(var it=E.length,q=1;q<it;q++)S++,y.splice(S,0,E[q]);}else y[S]=E;}}return y};p.prototype._walk=function(e,t,r,i,n,o,a,u){if(Array.isArray(r))for(var s=r.length,f=0;f<s;f++)u(f,e,t,r,i,n,o,a);else r&&D(r)==="object"&&Object.keys(r).forEach(function(c){u(c,e,t,r,i,n,o,a);});};p.prototype._slice=function(e,t,r,i,n,o,a){if(Array.isArray(r)){var u=r.length,s=e.split(":"),f=s[2]&&Number.parseInt(s[2])||1,c=s[0]&&Number.parseInt(s[0])||0,l=s[1]&&Number.parseInt(s[1])||u;c=c<0?Math.max(0,c+u):Math.min(u,c),l=l<0?Math.max(0,l+u):Math.min(u,l);for(var y=[],h=c;h<l;h+=f){var g=this._trace(R(h,t),r,i,n,o,a,true);g.forEach(function(_){y.push(_);});}return y}};p.prototype._eval=function(e,t,r,i,n,o){e.includes("@parentProperty")&&(this.currSandbox._$_parentProperty=o,e=e.replace(/@parentProperty/g,"_$_parentProperty")),e.includes("@parent")&&(this.currSandbox._$_parent=n,e=e.replace(/@parent/g,"_$_parent")),e.includes("@property")&&(this.currSandbox._$_property=r,e=e.replace(/@property/g,"_$_property")),e.includes("@path")&&(this.currSandbox._$_path=p.toPathString(i.concat([r])),e=e.replace(/@path/g,"_$_path")),e.includes("@root")&&(this.currSandbox._$_root=this.json,e=e.replace(/@root/g,"_$_root")),/@([\t-\r \)\.\[\xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF])/.test(e)&&(this.currSandbox._$_v=t,e=e.replace(/@([\t-\r \)\.\[\xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF])/g,"_$_v$1"));try{return this.vm.runInNewContext(e,this.currSandbox)}catch(a){throw console.log(a),new Error("jsonPath: "+a.message+": "+e)}};p.cache={};p.toPathString=function(e){for(var t=e,r=t.length,i="$",n=1;n<r;n++)/^(~|\^|@(?:[\0-\t\x0B\f\x0E-\u2027\u202A-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*?\(\))$/.test(t[n])||(i+=/^[\*0-9]+$/.test(t[n])?"["+t[n]+"]":"['"+t[n]+"']");return i};p.toPointer=function(e){for(var t=e,r=t.length,i="",n=1;n<r;n++)/^(~|\^|@(?:[\0-\t\x0B\f\x0E-\u2027\u202A-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*?\(\))$/.test(t[n])||(i+="/"+t[n].toString().replace(/~/g,"~0").replace(/\//g,"~1"));return i};p.toPathArray=function(e){var t=p.cache;if(t[e])return t[e].concat();var r=[],i=e.replace(/@(?:null|boolean|number|string|integer|undefined|nonFinite|scalar|array|object|function|other)\(\)/g,";$&;").replace(/['\[](\??\((?:[\0-\t\x0B\f\x0E-\u2027\u202A-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*?\))['\]]/g,function(o,a){return "[#"+(r.push(a)-1)+"]"}).replace(/\['((?:(?!['\]])[\s\S])*)'\]/g,function(o,a){return "['"+a.replace(/\./g,"%@%").replace(/~/g,"%%@@%%")+"']"}).replace(/~/g,";~;").replace(/'?\.'?(?!(?:(?!\[)[\s\S])*\])|\['?/g,";").replace(/%@%/g,".").replace(/%%@@%%/g,"~").replace(/(?:;)?(\^+)(?:;)?/g,function(o,a){return ";"+a.split("").join(";")+";"}).replace(/;;;|;;/g,";..;").replace(/;$|'?\]|'$/g,""),n=i.split(";").map(function(o){var a=o.match(/#([0-9]+)/);return !a||!a[1]?o:r[a[1]]});return t[e]=n,t[e]};var gt=function(t,r,i){for(var n=t.length,o=0;o<n;o++){var a=t[o];i(a)&&r.push(t.splice(o--,1)[0]);}};p.prototype.vm={runInNewContext:function(t,r){var i=Object.keys(r),n=[];gt(i,n,function(f){return typeof r[f]=="function"});var o=i.map(function(f,c){return r[f]}),a=n.reduce(function(f,c){var l=r[c].toString();return /function/.test(l)||(l="function "+l),"var "+c+"="+l+";"+f},"");t=a+t,!/(["'])use strict\1/.test(t)&&!i.includes("arguments")&&(t="var arguments = undefined;"+t),t=t.replace(/;[\t-\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]*$/,"");var u=t.lastIndexOf(";"),s=u>-1?t.slice(0,u+1)+" return "+t.slice(u+1):" return "+t;return x(Function,K(i).concat([s])).apply(void 0,K(o))}};var et=window.neo4j.int,rt=window.neo4j.DateTime;var m=[];for(let e=0;e<256;++e)m.push((e+256).toString(16).slice(1));function nt(e,t=0){return (m[e[t+0]]+m[e[t+1]]+m[e[t+2]]+m[e[t+3]]+"-"+m[e[t+4]]+m[e[t+5]]+"-"+m[e[t+6]]+m[e[t+7]]+"-"+m[e[t+8]]+m[e[t+9]]+"-"+m[e[t+10]]+m[e[t+11]]+m[e[t+12]]+m[e[t+13]]+m[e[t+14]]+m[e[t+15]]).toLowerCase()}var G=new Uint8Array(256),J=G.length;function L(){return J>G.length-16&&(crypto.randomFillSync(G),J=0),G.slice(J,J+=16)}var z={randomUUID:crypto.randomUUID};function Ft(e,t,r){var n;if(z.randomUUID&&!t&&!e)return z.randomUUID();e=e||{};let i=e.random??((n=e.rng)==null?void 0:n.call(e))??L();if(i.length<16)throw new Error("Random bytes length must be >= 16");if(i[6]=i[6]&15|64,i[8]=i[8]&63|128,t){if(r=r||0,r<0||r+16>t.length)throw new RangeError(`UUID byte range ${r}:${r+15} is out of buffer bounds`);for(let o=0;o<16;++o)t[r+o]=i[o];return t}return nt(i)}var Y=Ft;var B=class{currentVariable=0;getNext(){return this.currentVariable+=1,`c${this.currentVariable}`}};var V=class{transformers={};register(t,r){this.transformers[t]=r;}get(t){return this.transformers[t]}getRegisteredIds(){return Object.keys(this.transformers)}};var X=class e{constructor(t,r){this.schema=t;this.variableGenerator=new B,this.transformerRegistry=r||new V,this.registerDefaultTransformers();}variableGenerator;transformerRegistry;registerDefaultTransformers(){this.transformerRegistry.register("toString",t=>(t==null?void 0:t.toString())||""),this.transformerRegistry.register("toNumber",t=>Number(t)||0),this.transformerRegistry.register("extractText",t=>(t==null?void 0:t.text)||""),this.transformerRegistry.register("extractQuestionText",t=>(t==null?void 0:t.question)||""),this.transformerRegistry.register("extractAnswerText",t=>(t==null?void 0:t.answer)||""),this.transformerRegistry.register("parentId",(t,r,i)=>{var a,u,s,f;let n=(i==null?void 0:i.idField)||"id",o=i==null?void 0:i.parentType;return o?(a=r.parentContext)!=null&&a[`${o}${n.charAt(0).toUpperCase()}${n.slice(1)}`]?r.parentContext[`${o}${n.charAt(0).toUpperCase()}${n.slice(1)}`]:(s=(u=r.parentContext)==null?void 0:u[o])!=null&&s[n]?r.parentContext[o][n]:(f=r.parentContext)!=null&&f.parentContext?this.findParentIdInContext(r.parentContext.parentContext,o,n):"":""}),this.transformerRegistry.register("jsonpath",(t,r,i)=>{if(!(!(i!=null&&i.path)||t===void 0||t===null))try{let n=p({path:i.path,json:t,wrap:!1});if((n===void 0||n===t)&&(i.path.includes("(")||i.path.includes("["))){let o=i.path.replace(/^\$..?/,""),a=`return $${o.startsWith("[")?"":"."}${o};`;n=new Function("$",a)(t);}return n}catch(n){console.error(`Error evaluating JSONPath transformer path "${i.path}" on value:`,t,n);return}});}findParentIdInContext(t,r,i){var n;return t?t[`${r}${i.charAt(0).toUpperCase()}${i.slice(1)}`]?t[`${r}${i.charAt(0).toUpperCase()}${i.slice(1)}`]:(n=t[r])!=null&&n[i]?t[r][i]:this.findParentIdInContext(t.parentContext,r,i):""}evaluateContextPath(t,r,i=false){let n;t.startsWith("$current.")?n=p({path:t.replace("$current.","$."),json:r.current}):t.startsWith("$parent.")?n=p({path:t.replace("$parent.","$."),json:r.parent}):t.startsWith("$root.")?n=p({path:t.replace("$root.","$."),json:r.root}):t.startsWith("$global.")?n=p({path:t.replace("$global.","$."),json:r.global}):t.startsWith("$data.")?n=p({path:t.replace("$data.","$."),json:r.data}):n=p({path:t,json:r});let o=i||t.endsWith("..id")||t.includes("[?(@");return Array.isArray(n)?o?n:n.length>0?n[0]:void 0:o&&n!==void 0?[n]:n}async generateQueries(t){let r=new Set,{nodes:i,relationships:n}=await this.mapDataToGraph(this.schema,t,r),o=await Promise.all(i.map(u=>this.createNodeQuery(u))),a=await Promise.all(n.map(u=>this.createRelationshipQuery(u)));return {queries:[...o,...a]}}async mapDataToGraph(t,r,i,n={},o={}){let a=[],u=[],s={},f=t.sourceDataPath?this.getNestedValue(r,t.sourceDataPath.split(".")):r;if(!f)return {nodes:a,relationships:u};let c=t.iterationMode==="collection"&&Array.isArray(f)?f:[f];for(let l=0;l<c.length;l++){let y=c[l],h={data:y,index:l,parent:n.current||{},root:o.nodes||{},global:n.global||{},current:{}},g={},_={};for(let d of t.nodes)_[d.type]=this.generateNodeId(d,y);for(let d of t.nodes){let F=_[d.type];g[d.type]=F;let w=this.extractNodeProperties(d,y,{...h,nodeIds:_}),k={id:F,type:d.type,...w};h.current[d.type]={id:F,...w},i.has(F)||(a.push(k),i.add(F)),s[d.type]||(s[d.type]=[]);let U=s[d.type].findIndex(S=>S.id===F);U===-1?s[d.type].push({id:F,index:l,properties:w}):s[d.type][U].properties=w,Object.keys(n).length===0&&(o.nodes||(o.nodes={}),o.nodes[d.type]={id:F,...w}),d.isReference&&(h.global[d.type]||(h.global[d.type]=[]),h.global[d.type].push({id:F,...w}));}if(this.createRelationshipsWithJSONPath(t.relationships,h,u),t.subMappings)for(let d of t.subMappings){let{nodes:F,relationships:w}=await this.mapDataToGraph(d,y,i,h,o);a.push(...F),u.push(...w);}}return {nodes:a,relationships:u}}createRelationshipsWithJSONPath(t,r,i){for(let n of t){let o=[],a=[];if(n.from.selector&&n.from.nodeType)o=this.resolveNodeIds(n.from.nodeType,n.from.selector,r);else if(n.from.path){let u=n.mapping!=="oneToOne",s=this.evaluateContextPath(n.from.path,r,u);if(Array.isArray(s))o=s.map(f=>typeof f=="object"&&f!==null?f.id:f).filter(f=>f!=null);else if(s!=null){let f=typeof s=="object"&&s!==null?s.id:s;f!=null&&(o=[f]);}}if(n.to.selector&&n.to.nodeType)a=this.resolveNodeIds(n.to.nodeType,n.to.selector,r);else if(n.to.path){let u=n.mapping!=="oneToOne",s=this.evaluateContextPath(n.to.path,r,u);if(Array.isArray(s))a=s.map(f=>typeof f=="object"&&f!==null?f.id:f).filter(f=>f!=null);else if(s!=null){let f=typeof s=="object"&&s!==null?s.id:s;f!=null&&(a=[f]);}}if(o.length===0||a.length===0){console.log(`No nodes found for relationship ${n.type}`);continue}if(n.mapping==="oneToOne"){let u=Math.min(o.length,a.length);for(let s=0;s<u;s++)i.push({from:o[s],to:a[s],type:n.type});}else for(let u of o)for(let s of a)i.push({from:u,to:s,type:n.type});}}resolveNodeIds(t,r,i){var n,o,a,u;if(r==="current"&&((n=i.current)!=null&&n[t]))return [i.current[t].id];if(r==="parent"&&((o=i.parent)!=null&&o[t]))return [i.parent[t].id];if(r==="root"&&((a=i.root)!=null&&a[t]))return [i.root[t].id];if(r.includes("=")){let[s,f]=r.split("=");if((u=i.global)!=null&&u[t])return i.global[t].filter(l=>l[s]===f).map(l=>l.id)}return []}generateNodeId(t,r){let i=t.idField||"id";switch(t.idStrategy){case "fixed":if(!t.idValue)throw new Error(`Fixed ID strategy requires an idValue for node type ${t.type}`);return t.idValue;case "fromData":let n=i==="."?r:this.getNestedValue(r,i.split("."));if(n==null)throw new Error(`ID field '${i}' not found in data for node type ${t.type} using 'fromData' strategy.`);return String(n);case "uuid":default:return Y()}}extractNodeProperties(t,r,i){let n={};n.createdAt=rt.fromStandardDate(new Date);for(let o of t.properties){let a;if(o.path==="."&&(typeof r!="object"||r===null)?a=r:o.path&&o.path.startsWith("$")?a=this.evaluateContextPath(o.path,i,false):o.path&&(a=this.getNestedValue(r,o.path.split("."))),o.transformerId){let u=this.transformerRegistry.get(o.transformerId);u&&(a=u(a,i,o.transformerParams));}a===void 0&&o.default!==void 0&&(a=o.default),o.type&&(a=this.convertValueToType(a,o.type)),n[o.name]=a;}return n}convertValueToType(t,r){if(t==null)return t;switch(r.toLowerCase()){case "integer":case "int":return et(t);case "float":case "double":return Number.isFinite(t)?t:parseFloat(t);case "boolean":case "bool":return !!t;case "string":return String(t);case "date":return new Date(t);default:return t}}getNestedValue(t,r){return r.reduce((i,n)=>i&&i[n]!==void 0?i[n]:void 0,t)}async createNodeQuery(t){let{id:r,type:i,...n}=t,o=this.variableGenerator.getNext(),a=this.findNodeDefinition(i),u=(a==null?void 0:a.isReference)===true,f=`
-      ${u?"MERGE":"CREATE"} (${o}:${i} {id: $id_${o}}) 
-      SET ${o} += $props_${o}
-    `,c={[`id_${o}`]:r,[`props_${o}`]:n};return {query:f,params:c,isMerge:u}}findNodeDefinition(t){let r=i=>{let n=i.nodes.find(o=>o.type===t);if(n)return n;if(i.subMappings)for(let o of i.subMappings){let a=r(o);if(a)return a}};return r(this.schema)}async createRelationshipQuery(t){let{from:r,to:i,type:n}=t;return {query:`
+var JSON2Cypher = (function (exports) {
+  'use strict';
+
+  // node_modules/.pnpm/jsonpath-plus-browser@5.0.6/node_modules/jsonpath-plus-browser/dist/index-browser-esm.js
+  function _typeof(obj) {
+    "@babel/helpers - typeof";
+    if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+      _typeof = function(obj2) {
+        return typeof obj2;
+      };
+    } else {
+      _typeof = function(obj2) {
+        return obj2 && typeof Symbol === "function" && obj2.constructor === Symbol && obj2 !== Symbol.prototype ? "symbol" : typeof obj2;
+      };
+    }
+    return _typeof(obj);
+  }
+  function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  }
+  function _inherits(subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        writable: true,
+        configurable: true
+      }
+    });
+    if (superClass) _setPrototypeOf(subClass, superClass);
+  }
+  function _getPrototypeOf(o) {
+    _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf2(o2) {
+      return o2.__proto__ || Object.getPrototypeOf(o2);
+    };
+    return _getPrototypeOf(o);
+  }
+  function _setPrototypeOf(o, p) {
+    _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf2(o2, p2) {
+      o2.__proto__ = p2;
+      return o2;
+    };
+    return _setPrototypeOf(o, p);
+  }
+  function _isNativeReflectConstruct() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+    try {
+      Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function() {
+      }));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function _construct(Parent, args, Class) {
+    if (_isNativeReflectConstruct()) {
+      _construct = Reflect.construct;
+    } else {
+      _construct = function _construct2(Parent2, args2, Class2) {
+        var a = [null];
+        a.push.apply(a, args2);
+        var Constructor = Function.bind.apply(Parent2, a);
+        var instance = new Constructor();
+        if (Class2) _setPrototypeOf(instance, Class2.prototype);
+        return instance;
+      };
+    }
+    return _construct.apply(null, arguments);
+  }
+  function _isNativeFunction(fn) {
+    return Function.toString.call(fn).indexOf("[native code]") !== -1;
+  }
+  function _wrapNativeSuper(Class) {
+    var _cache = typeof Map === "function" ? /* @__PURE__ */ new Map() : void 0;
+    _wrapNativeSuper = function _wrapNativeSuper2(Class2) {
+      if (Class2 === null || !_isNativeFunction(Class2)) return Class2;
+      if (typeof Class2 !== "function") {
+        throw new TypeError("Super expression must either be null or a function");
+      }
+      if (typeof _cache !== "undefined") {
+        if (_cache.has(Class2)) return _cache.get(Class2);
+        _cache.set(Class2, Wrapper);
+      }
+      function Wrapper() {
+        return _construct(Class2, arguments, _getPrototypeOf(this).constructor);
+      }
+      Wrapper.prototype = Object.create(Class2.prototype, {
+        constructor: {
+          value: Wrapper,
+          enumerable: false,
+          writable: true,
+          configurable: true
+        }
+      });
+      return _setPrototypeOf(Wrapper, Class2);
+    };
+    return _wrapNativeSuper(Class);
+  }
+  function _assertThisInitialized(self) {
+    if (self === void 0) {
+      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    }
+    return self;
+  }
+  function _possibleConstructorReturn(self, call) {
+    if (call && (typeof call === "object" || typeof call === "function")) {
+      return call;
+    }
+    return _assertThisInitialized(self);
+  }
+  function _createSuper(Derived) {
+    var hasNativeReflectConstruct = _isNativeReflectConstruct();
+    return function _createSuperInternal() {
+      var Super = _getPrototypeOf(Derived), result;
+      if (hasNativeReflectConstruct) {
+        var NewTarget = _getPrototypeOf(this).constructor;
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+      return _possibleConstructorReturn(this, result);
+    };
+  }
+  function _toConsumableArray(arr) {
+    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
+  }
+  function _arrayWithoutHoles(arr) {
+    if (Array.isArray(arr)) return _arrayLikeToArray(arr);
+  }
+  function _iterableToArray(iter) {
+    if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+  }
+  function _unsupportedIterableToArray(o, minLen) {
+    if (!o) return;
+    if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === "Object" && o.constructor) n = o.constructor.name;
+    if (n === "Map" || n === "Set") return Array.from(o);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+  }
+  function _arrayLikeToArray(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
+    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+    return arr2;
+  }
+  function _nonIterableSpread() {
+    throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+  function _createForOfIteratorHelper(o, allowArrayLike) {
+    var it;
+    if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
+      if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike) {
+        if (it) o = it;
+        var i = 0;
+        var F = function() {
+        };
+        return {
+          s: F,
+          n: function() {
+            if (i >= o.length) return {
+              done: true
+            };
+            return {
+              done: false,
+              value: o[i++]
+            };
+          },
+          e: function(e) {
+            throw e;
+          },
+          f: F
+        };
+      }
+      throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
+    var normalCompletion = true, didErr = false, err;
+    return {
+      s: function() {
+        it = o[Symbol.iterator]();
+      },
+      n: function() {
+        var step = it.next();
+        normalCompletion = step.done;
+        return step;
+      },
+      e: function(e) {
+        didErr = true;
+        err = e;
+      },
+      f: function() {
+        try {
+          if (!normalCompletion && it.return != null) it.return();
+        } finally {
+          if (didErr) throw err;
+        }
+      }
+    };
+  }
+  var hasOwnProp = Object.prototype.hasOwnProperty;
+  function push(arr, item) {
+    arr = arr.slice();
+    arr.push(item);
+    return arr;
+  }
+  function unshift(item, arr) {
+    arr = arr.slice();
+    arr.unshift(item);
+    return arr;
+  }
+  var NewError = /* @__PURE__ */ function(_Error) {
+    _inherits(NewError2, _Error);
+    var _super = _createSuper(NewError2);
+    function NewError2(value) {
+      var _this;
+      _classCallCheck(this, NewError2);
+      _this = _super.call(this, 'JSONPath should not be called with "new" (it prevents return of (unwrapped) scalar values)');
+      _this.avoidNew = true;
+      _this.value = value;
+      _this.name = "NewError";
+      return _this;
+    }
+    return NewError2;
+  }(/* @__PURE__ */ _wrapNativeSuper(Error));
+  function JSONPath(opts, expr, obj, callback, otherTypeCallback) {
+    if (!(this instanceof JSONPath)) {
+      try {
+        return new JSONPath(opts, expr, obj, callback, otherTypeCallback);
+      } catch (e) {
+        if (!e.avoidNew) {
+          throw e;
+        }
+        return e.value;
+      }
+    }
+    if (typeof opts === "string") {
+      otherTypeCallback = callback;
+      callback = obj;
+      obj = expr;
+      expr = opts;
+      opts = null;
+    }
+    var optObj = opts && _typeof(opts) === "object";
+    opts = opts || {};
+    this.json = opts.json || obj;
+    this.path = opts.path || expr;
+    this.resultType = opts.resultType || "value";
+    this.flatten = opts.flatten || false;
+    this.wrap = hasOwnProp.call(opts, "wrap") ? opts.wrap : true;
+    this.sandbox = opts.sandbox || {};
+    this.preventEval = opts.preventEval || false;
+    this.parent = opts.parent || null;
+    this.parentProperty = opts.parentProperty || null;
+    this.callback = opts.callback || callback || null;
+    this.otherTypeCallback = opts.otherTypeCallback || otherTypeCallback || function() {
+      throw new TypeError("You must supply an otherTypeCallback callback option with the @other() operator.");
+    };
+    if (opts.autostart !== false) {
+      var args = {
+        path: optObj ? opts.path : expr
+      };
+      if (!optObj) {
+        args.json = obj;
+      } else if ("json" in opts) {
+        args.json = opts.json;
+      }
+      var ret = this.evaluate(args);
+      if (!ret || _typeof(ret) !== "object") {
+        throw new NewError(ret);
+      }
+      return ret;
+    }
+  }
+  JSONPath.prototype.evaluate = function(expr, json, callback, otherTypeCallback) {
+    var _this2 = this;
+    var currParent = this.parent, currParentProperty = this.parentProperty;
+    var flatten = this.flatten, wrap = this.wrap;
+    this.currResultType = this.resultType;
+    this.currPreventEval = this.preventEval;
+    this.currSandbox = this.sandbox;
+    callback = callback || this.callback;
+    this.currOtherTypeCallback = otherTypeCallback || this.otherTypeCallback;
+    json = json || this.json;
+    expr = expr || this.path;
+    if (expr && _typeof(expr) === "object" && !Array.isArray(expr)) {
+      if (!expr.path && expr.path !== "") {
+        throw new TypeError('You must supply a "path" property when providing an object argument to JSONPath.evaluate().');
+      }
+      if (!hasOwnProp.call(expr, "json")) {
+        throw new TypeError('You must supply a "json" property when providing an object argument to JSONPath.evaluate().');
+      }
+      var _expr = expr;
+      json = _expr.json;
+      flatten = hasOwnProp.call(expr, "flatten") ? expr.flatten : flatten;
+      this.currResultType = hasOwnProp.call(expr, "resultType") ? expr.resultType : this.currResultType;
+      this.currSandbox = hasOwnProp.call(expr, "sandbox") ? expr.sandbox : this.currSandbox;
+      wrap = hasOwnProp.call(expr, "wrap") ? expr.wrap : wrap;
+      this.currPreventEval = hasOwnProp.call(expr, "preventEval") ? expr.preventEval : this.currPreventEval;
+      callback = hasOwnProp.call(expr, "callback") ? expr.callback : callback;
+      this.currOtherTypeCallback = hasOwnProp.call(expr, "otherTypeCallback") ? expr.otherTypeCallback : this.currOtherTypeCallback;
+      currParent = hasOwnProp.call(expr, "parent") ? expr.parent : currParent;
+      currParentProperty = hasOwnProp.call(expr, "parentProperty") ? expr.parentProperty : currParentProperty;
+      expr = expr.path;
+    }
+    currParent = currParent || null;
+    currParentProperty = currParentProperty || null;
+    if (Array.isArray(expr)) {
+      expr = JSONPath.toPathString(expr);
+    }
+    if (!expr && expr !== "" || !json) {
+      return void 0;
+    }
+    var exprList = JSONPath.toPathArray(expr);
+    if (exprList[0] === "$" && exprList.length > 1) {
+      exprList.shift();
+    }
+    this._hasParentSelector = null;
+    var result = this._trace(exprList, json, ["$"], currParent, currParentProperty, callback).filter(function(ea) {
+      return ea && !ea.isParentSelector;
+    });
+    if (!result.length) {
+      return wrap ? [] : void 0;
+    }
+    if (!wrap && result.length === 1 && !result[0].hasArrExpr) {
+      return this._getPreferredOutput(result[0]);
+    }
+    return result.reduce(function(rslt, ea) {
+      var valOrPath = _this2._getPreferredOutput(ea);
+      if (flatten && Array.isArray(valOrPath)) {
+        rslt = rslt.concat(valOrPath);
+      } else {
+        rslt.push(valOrPath);
+      }
+      return rslt;
+    }, []);
+  };
+  JSONPath.prototype._getPreferredOutput = function(ea) {
+    var resultType = this.currResultType;
+    switch (resultType) {
+      case "all": {
+        var path = Array.isArray(ea.path) ? ea.path : JSONPath.toPathArray(ea.path);
+        ea.pointer = JSONPath.toPointer(path);
+        ea.path = typeof ea.path === "string" ? ea.path : JSONPath.toPathString(ea.path);
+        return ea;
+      }
+      case "value":
+      case "parent":
+      case "parentProperty":
+        return ea[resultType];
+      case "path":
+        return JSONPath.toPathString(ea[resultType]);
+      case "pointer":
+        return JSONPath.toPointer(ea.path);
+      default:
+        throw new TypeError("Unknown result type");
+    }
+  };
+  JSONPath.prototype._handleCallback = function(fullRetObj, callback, type) {
+    if (callback) {
+      var preferredOutput = this._getPreferredOutput(fullRetObj);
+      fullRetObj.path = typeof fullRetObj.path === "string" ? fullRetObj.path : JSONPath.toPathString(fullRetObj.path);
+      callback(preferredOutput, type, fullRetObj);
+    }
+  };
+  JSONPath.prototype._trace = function(expr, val, path, parent, parentPropName, callback, hasArrExpr, literalPriority) {
+    var _this3 = this;
+    var retObj;
+    if (!expr.length) {
+      retObj = {
+        path,
+        value: val,
+        parent,
+        parentProperty: parentPropName,
+        hasArrExpr
+      };
+      this._handleCallback(retObj, callback, "value");
+      return retObj;
+    }
+    var loc = expr[0], x = expr.slice(1);
+    var ret = [];
+    function addRet(elems) {
+      if (Array.isArray(elems)) {
+        elems.forEach(function(t2) {
+          ret.push(t2);
+        });
+      } else {
+        ret.push(elems);
+      }
+    }
+    if ((typeof loc !== "string" || literalPriority) && val && hasOwnProp.call(val, loc)) {
+      addRet(this._trace(x, val[loc], push(path, loc), val, loc, callback, hasArrExpr));
+    } else if (loc === "*") {
+      this._walk(loc, x, val, path, parent, parentPropName, callback, function(m, l, _x, v, p, par, pr, cb) {
+        addRet(_this3._trace(unshift(m, _x), v, p, par, pr, cb, true, true));
+      });
+    } else if (loc === "..") {
+      addRet(this._trace(x, val, path, parent, parentPropName, callback, hasArrExpr));
+      this._walk(loc, x, val, path, parent, parentPropName, callback, function(m, l, _x, v, p, par, pr, cb) {
+        if (_typeof(v[m]) === "object") {
+          addRet(_this3._trace(unshift(l, _x), v[m], push(p, m), v, m, cb, true));
+        }
+      });
+    } else if (loc === "^") {
+      this._hasParentSelector = true;
+      return {
+        path: path.slice(0, -1),
+        expr: x,
+        isParentSelector: true
+      };
+    } else if (loc === "~") {
+      retObj = {
+        path: push(path, loc),
+        value: parentPropName,
+        parent,
+        parentProperty: null
+      };
+      this._handleCallback(retObj, callback, "property");
+      return retObj;
+    } else if (loc === "$") {
+      addRet(this._trace(x, val, path, null, null, callback, hasArrExpr));
+    } else if (/^(\x2D?[0-9]*):(\x2D?[0-9]*):?([0-9]*)$/.test(loc)) {
+      addRet(this._slice(loc, x, val, path, parent, parentPropName, callback));
+    } else if (loc.indexOf("?(") === 0) {
+      if (this.currPreventEval) {
+        throw new Error("Eval [?(expr)] prevented in JSONPath expression.");
+      }
+      this._walk(loc, x, val, path, parent, parentPropName, callback, function(m, l, _x, v, p, par, pr, cb) {
+        if (_this3._eval(l.replace(/^\?\(((?:[\0-\t\x0B\f\x0E-\u2027\u202A-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*?)\)$/, "$1"), v[m], m, p, par, pr)) {
+          addRet(_this3._trace(unshift(m, _x), v, p, par, pr, cb, true));
+        }
+      });
+    } else if (loc[0] === "(") {
+      if (this.currPreventEval) {
+        throw new Error("Eval [(expr)] prevented in JSONPath expression.");
+      }
+      addRet(this._trace(unshift(this._eval(loc, val, path[path.length - 1], path.slice(0, -1), parent, parentPropName), x), val, path, parent, parentPropName, callback, hasArrExpr));
+    } else if (loc[0] === "@") {
+      var addType = false;
+      var valueType = loc.slice(1, -2);
+      switch (valueType) {
+        case "scalar":
+          if (!val || !["object", "function"].includes(_typeof(val))) {
+            addType = true;
+          }
+          break;
+        case "boolean":
+        case "string":
+        case "undefined":
+        case "function":
+          if (_typeof(val) === valueType) {
+            addType = true;
+          }
+          break;
+        case "integer":
+          if (Number.isFinite(val) && !(val % 1)) {
+            addType = true;
+          }
+          break;
+        case "number":
+          if (Number.isFinite(val)) {
+            addType = true;
+          }
+          break;
+        case "nonFinite":
+          if (typeof val === "number" && !Number.isFinite(val)) {
+            addType = true;
+          }
+          break;
+        case "object":
+          if (val && _typeof(val) === valueType) {
+            addType = true;
+          }
+          break;
+        case "array":
+          if (Array.isArray(val)) {
+            addType = true;
+          }
+          break;
+        case "other":
+          addType = this.currOtherTypeCallback(val, path, parent, parentPropName);
+          break;
+        case "null":
+          if (val === null) {
+            addType = true;
+          }
+          break;
+        /* istanbul ignore next */
+        default:
+          throw new TypeError("Unknown value type " + valueType);
+      }
+      if (addType) {
+        retObj = {
+          path,
+          value: val,
+          parent,
+          parentProperty: parentPropName
+        };
+        this._handleCallback(retObj, callback, "value");
+        return retObj;
+      }
+    } else if (loc[0] === "`" && val && hasOwnProp.call(val, loc.slice(1))) {
+      var locProp = loc.slice(1);
+      addRet(this._trace(x, val[locProp], push(path, locProp), val, locProp, callback, hasArrExpr, true));
+    } else if (loc.includes(",")) {
+      var parts = loc.split(",");
+      var _iterator = _createForOfIteratorHelper(parts), _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done; ) {
+          var part = _step.value;
+          addRet(this._trace(unshift(part, x), val, path, parent, parentPropName, callback, true));
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    } else if (!literalPriority && val && hasOwnProp.call(val, loc)) {
+      addRet(this._trace(x, val[loc], push(path, loc), val, loc, callback, hasArrExpr, true));
+    }
+    if (this._hasParentSelector) {
+      for (var t = 0; t < ret.length; t++) {
+        var rett = ret[t];
+        if (rett && rett.isParentSelector) {
+          var tmp = this._trace(rett.expr, val, rett.path, parent, parentPropName, callback, hasArrExpr);
+          if (Array.isArray(tmp)) {
+            ret[t] = tmp[0];
+            var tl = tmp.length;
+            for (var tt = 1; tt < tl; tt++) {
+              t++;
+              ret.splice(t, 0, tmp[tt]);
+            }
+          } else {
+            ret[t] = tmp;
+          }
+        }
+      }
+    }
+    return ret;
+  };
+  JSONPath.prototype._walk = function(loc, expr, val, path, parent, parentPropName, callback, f) {
+    if (Array.isArray(val)) {
+      var n = val.length;
+      for (var i = 0; i < n; i++) {
+        f(i, loc, expr, val, path, parent, parentPropName, callback);
+      }
+    } else if (val && _typeof(val) === "object") {
+      Object.keys(val).forEach(function(m) {
+        f(m, loc, expr, val, path, parent, parentPropName, callback);
+      });
+    }
+  };
+  JSONPath.prototype._slice = function(loc, expr, val, path, parent, parentPropName, callback) {
+    if (!Array.isArray(val)) {
+      return void 0;
+    }
+    var len = val.length, parts = loc.split(":"), step = parts[2] && Number.parseInt(parts[2]) || 1;
+    var start = parts[0] && Number.parseInt(parts[0]) || 0, end = parts[1] && Number.parseInt(parts[1]) || len;
+    start = start < 0 ? Math.max(0, start + len) : Math.min(len, start);
+    end = end < 0 ? Math.max(0, end + len) : Math.min(len, end);
+    var ret = [];
+    for (var i = start; i < end; i += step) {
+      var tmp = this._trace(unshift(i, expr), val, path, parent, parentPropName, callback, true);
+      tmp.forEach(function(t) {
+        ret.push(t);
+      });
+    }
+    return ret;
+  };
+  JSONPath.prototype._eval = function(code, _v, _vname, path, parent, parentPropName) {
+    if (code.includes("@parentProperty")) {
+      this.currSandbox._$_parentProperty = parentPropName;
+      code = code.replace(/@parentProperty/g, "_$_parentProperty");
+    }
+    if (code.includes("@parent")) {
+      this.currSandbox._$_parent = parent;
+      code = code.replace(/@parent/g, "_$_parent");
+    }
+    if (code.includes("@property")) {
+      this.currSandbox._$_property = _vname;
+      code = code.replace(/@property/g, "_$_property");
+    }
+    if (code.includes("@path")) {
+      this.currSandbox._$_path = JSONPath.toPathString(path.concat([_vname]));
+      code = code.replace(/@path/g, "_$_path");
+    }
+    if (code.includes("@root")) {
+      this.currSandbox._$_root = this.json;
+      code = code.replace(/@root/g, "_$_root");
+    }
+    if (/@([\t-\r \)\.\[\xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF])/.test(code)) {
+      this.currSandbox._$_v = _v;
+      code = code.replace(/@([\t-\r \)\.\[\xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF])/g, "_$_v$1");
+    }
+    try {
+      return this.vm.runInNewContext(code, this.currSandbox);
+    } catch (e) {
+      console.log(e);
+      throw new Error("jsonPath: " + e.message + ": " + code);
+    }
+  };
+  JSONPath.cache = {};
+  JSONPath.toPathString = function(pathArr) {
+    var x = pathArr, n = x.length;
+    var p = "$";
+    for (var i = 1; i < n; i++) {
+      if (!/^(~|\^|@(?:[\0-\t\x0B\f\x0E-\u2027\u202A-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*?\(\))$/.test(x[i])) {
+        p += /^[\*0-9]+$/.test(x[i]) ? "[" + x[i] + "]" : "['" + x[i] + "']";
+      }
+    }
+    return p;
+  };
+  JSONPath.toPointer = function(pointer) {
+    var x = pointer, n = x.length;
+    var p = "";
+    for (var i = 1; i < n; i++) {
+      if (!/^(~|\^|@(?:[\0-\t\x0B\f\x0E-\u2027\u202A-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*?\(\))$/.test(x[i])) {
+        p += "/" + x[i].toString().replace(/~/g, "~0").replace(/\//g, "~1");
+      }
+    }
+    return p;
+  };
+  JSONPath.toPathArray = function(expr) {
+    var cache = JSONPath.cache;
+    if (cache[expr]) {
+      return cache[expr].concat();
+    }
+    var subx = [];
+    var normalized = expr.replace(/@(?:null|boolean|number|string|integer|undefined|nonFinite|scalar|array|object|function|other)\(\)/g, ";$&;").replace(/['\[](\??\((?:[\0-\t\x0B\f\x0E-\u2027\u202A-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*?\))['\]]/g, function($0, $1) {
+      return "[#" + (subx.push($1) - 1) + "]";
+    }).replace(/\['((?:(?!['\]])[\s\S])*)'\]/g, function($0, prop) {
+      return "['" + prop.replace(/\./g, "%@%").replace(/~/g, "%%@@%%") + "']";
+    }).replace(/~/g, ";~;").replace(/'?\.'?(?!(?:(?!\[)[\s\S])*\])|\['?/g, ";").replace(/%@%/g, ".").replace(/%%@@%%/g, "~").replace(/(?:;)?(\^+)(?:;)?/g, function($0, ups) {
+      return ";" + ups.split("").join(";") + ";";
+    }).replace(/;;;|;;/g, ";..;").replace(/;$|'?\]|'$/g, "");
+    var exprList = normalized.split(";").map(function(exp) {
+      var match = exp.match(/#([0-9]+)/);
+      return !match || !match[1] ? exp : subx[match[1]];
+    });
+    cache[expr] = exprList;
+    return cache[expr];
+  };
+  var moveToAnotherArray = function moveToAnotherArray2(source, target, conditionCb) {
+    var il = source.length;
+    for (var i = 0; i < il; i++) {
+      var item = source[i];
+      if (conditionCb(item)) {
+        target.push(source.splice(i--, 1)[0]);
+      }
+    }
+  };
+  JSONPath.prototype.vm = {
+    /**
+     * @param {string} expr Expression to evaluate
+     * @param {PlainObject} context Object whose items will be added
+     *   to evaluation
+     * @returns {any} Result of evaluated code
+     */
+    runInNewContext: function runInNewContext(expr, context) {
+      var keys = Object.keys(context);
+      var funcs = [];
+      moveToAnotherArray(keys, funcs, function(key) {
+        return typeof context[key] === "function";
+      });
+      var values = keys.map(function(vr, i) {
+        return context[vr];
+      });
+      var funcString = funcs.reduce(function(s, func) {
+        var fString = context[func].toString();
+        if (!/function/.test(fString)) {
+          fString = "function " + fString;
+        }
+        return "var " + func + "=" + fString + ";" + s;
+      }, "");
+      expr = funcString + expr;
+      if (!/(["'])use strict\1/.test(expr) && !keys.includes("arguments")) {
+        expr = "var arguments = undefined;" + expr;
+      }
+      expr = expr.replace(/;[\t-\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]*$/, "");
+      var lastStatementEnd = expr.lastIndexOf(";");
+      var code = lastStatementEnd > -1 ? expr.slice(0, lastStatementEnd + 1) + " return " + expr.slice(lastStatementEnd + 1) : " return " + expr;
+      return _construct(Function, _toConsumableArray(keys).concat([code])).apply(void 0, _toConsumableArray(values));
+    }
+  };
+
+  // neo4j-replace:neo4j-driver
+  var int = window.neo4j.int;
+  var DateTime = window.neo4j.DateTime;
+
+  // uuid-replace:uuid
+  function v4() {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      try {
+        return crypto.randomUUID();
+      } catch (e) {
+        console.error("Error calling crypto.randomUUID directly in uuid replacement:", e);
+        throw new Error("Failed to generate UUID using crypto.randomUUID");
+      }
+    } else {
+      console.error("crypto.randomUUID is not available in this environment. Cannot generate UUID.");
+      throw new Error("UUID generation not supported: crypto.randomUUID missing.");
+    }
+  }
+
+  // src/VariableGenerator.ts
+  var VariableGenerator = class {
+    currentVariable = 0;
+    getNext() {
+      this.currentVariable += 1;
+      return `c${this.currentVariable}`;
+    }
+  };
+
+  // src/TransformerRegistry.ts
+  var TransformerRegistry = class {
+    transformers = {};
+    register(id, fn) {
+      this.transformers[id] = fn;
+    }
+    get(id) {
+      return this.transformers[id];
+    }
+    // For serialization support - returns registered transformer IDs
+    getRegisteredIds() {
+      return Object.keys(this.transformers);
+    }
+  };
+
+  // src/JSON2Cypher.ts
+  var JSON2Cypher = class _JSON2Cypher {
+    constructor(schema, transformerRegistry) {
+      this.schema = schema;
+      this.variableGenerator = new VariableGenerator();
+      this.transformerRegistry = transformerRegistry || new TransformerRegistry();
+      this.registerDefaultTransformers();
+    }
+    variableGenerator;
+    transformerRegistry;
+    registerDefaultTransformers() {
+      this.transformerRegistry.register(
+        "toString",
+        (value) => (value == null ? void 0 : value.toString()) || ""
+      );
+      this.transformerRegistry.register(
+        "toNumber",
+        (value) => Number(value) || 0
+      );
+      this.transformerRegistry.register("extractText", (obj) => (obj == null ? void 0 : obj.text) || "");
+      this.transformerRegistry.register(
+        "extractQuestionText",
+        (value) => (value == null ? void 0 : value.question) || ""
+      );
+      this.transformerRegistry.register(
+        "extractAnswerText",
+        (value) => (value == null ? void 0 : value.answer) || ""
+      );
+      this.transformerRegistry.register("parentId", (value, context, params) => {
+        var _a, _b, _c, _d;
+        const idField = (params == null ? void 0 : params.idField) || "id";
+        const parentType = params == null ? void 0 : params.parentType;
+        if (!parentType) {
+          return "";
+        }
+        if ((_a = context.parentContext) == null ? void 0 : _a[`${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`]) {
+          return context.parentContext[`${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`];
+        }
+        if ((_c = (_b = context.parentContext) == null ? void 0 : _b[parentType]) == null ? void 0 : _c[idField]) {
+          return context.parentContext[parentType][idField];
+        }
+        if ((_d = context.parentContext) == null ? void 0 : _d.parentContext) {
+          return this.findParentIdInContext(
+            context.parentContext.parentContext,
+            parentType,
+            idField
+          );
+        }
+        return "";
+      });
+      this.transformerRegistry.register("jsonpath", (value, context, params) => {
+        if (!(params == null ? void 0 : params.path) || value === void 0 || value === null) return void 0;
+        try {
+          let result = JSONPath({ path: params.path, json: value, wrap: false });
+          if ((result === void 0 || result === value) && (params.path.includes("(") || params.path.includes("["))) {
+            const expression = params.path.replace(/^\$..?/, "");
+            const functionBody = `return $${expression.startsWith("[") ? "" : "."}${expression};`;
+            const evaluator = new Function("$", functionBody);
+            result = evaluator(value);
+          }
+          return result;
+        } catch (e) {
+          console.error(
+            `Error evaluating JSONPath transformer path "${params.path}" on value:`,
+            value,
+            e
+          );
+          return void 0;
+        }
+      });
+    }
+    findParentIdInContext(context, parentType, idField) {
+      var _a;
+      if (!context) return "";
+      if (context[`${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`]) {
+        return context[`${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`];
+      }
+      if ((_a = context[parentType]) == null ? void 0 : _a[idField]) {
+        return context[parentType][idField];
+      }
+      return this.findParentIdInContext(
+        context.parentContext,
+        parentType,
+        idField
+      );
+    }
+    // Add a method to evaluate context-aware JSONPath expressions
+    evaluateContextPath(path, context, returnArray = false) {
+      let result;
+      if (path.startsWith("$current.")) {
+        result = JSONPath({
+          path: path.replace("$current.", "$."),
+          json: context.current
+        });
+      } else if (path.startsWith("$parent.")) {
+        result = JSONPath({
+          path: path.replace("$parent.", "$."),
+          json: context.parent
+        });
+      } else if (path.startsWith("$root.")) {
+        result = JSONPath({
+          path: path.replace("$root.", "$."),
+          json: context.root
+        });
+      } else if (path.startsWith("$global.")) {
+        result = JSONPath({
+          path: path.replace("$global.", "$."),
+          json: context.global
+        });
+      } else if (path.startsWith("$data.")) {
+        result = JSONPath({
+          path: path.replace("$data.", "$."),
+          json: context.data
+        });
+      } else {
+        result = JSONPath({ path, json: context });
+      }
+      const wantsArray = returnArray || path.endsWith("..id") || path.includes("[?(@");
+      if (Array.isArray(result)) {
+        if (wantsArray) {
+          return result;
+        }
+        return result.length > 0 ? result[0] : void 0;
+      }
+      if (wantsArray && result !== void 0) {
+        return [result];
+      }
+      return result;
+    }
+    async generateQueries(data) {
+      const addedNodeIds = /* @__PURE__ */ new Set();
+      const { nodes, relationships } = await this.mapDataToGraph(
+        this.schema,
+        data,
+        addedNodeIds
+        // Pass the set to the initial call
+      );
+      const nodeQueries = await Promise.all(
+        nodes.map((node) => this.createNodeQuery(node))
+      );
+      const relationshipQueries = await Promise.all(
+        relationships.map((rel) => this.createRelationshipQuery(rel))
+      );
+      return { queries: [...nodeQueries, ...relationshipQueries] };
+    }
+    async mapDataToGraph(schema, data, addedNodeIds, parentContext = {}, rootNodes = {}) {
+      const nodes = [];
+      const relationships = [];
+      const createdNodesByType = {};
+      const sourceData = schema.sourceDataPath ? this.getNestedValue(data, schema.sourceDataPath.split(".")) : data;
+      if (!sourceData) return { nodes, relationships };
+      const dataItems = schema.iterationMode === "collection" && Array.isArray(sourceData) ? sourceData : [sourceData];
+      for (let i = 0; i < dataItems.length; i++) {
+        const item = dataItems[i];
+        const itemContext = {
+          data: item,
+          index: i,
+          parent: parentContext.current || {},
+          root: rootNodes.nodes || {},
+          global: parentContext.global || {},
+          current: {}
+        };
+        const currentLevelNodes = {};
+        const nodeIds = {};
+        for (const nodeDef of schema.nodes) {
+          nodeIds[nodeDef.type] = this.generateNodeId(nodeDef, item);
+        }
+        for (const nodeDef of schema.nodes) {
+          const nodeId = nodeIds[nodeDef.type];
+          currentLevelNodes[nodeDef.type] = nodeId;
+          const nodeProps = this.extractNodeProperties(nodeDef, item, {
+            ...itemContext,
+            nodeIds
+          });
+          const node = {
+            id: nodeId,
+            type: nodeDef.type,
+            ...nodeProps
+          };
+          itemContext.current[nodeDef.type] = {
+            id: nodeId,
+            ...nodeProps
+          };
+          if (!addedNodeIds.has(nodeId)) {
+            nodes.push(node);
+            addedNodeIds.add(nodeId);
+          }
+          if (!createdNodesByType[nodeDef.type]) {
+            createdNodesByType[nodeDef.type] = [];
+          }
+          const existingNodeIndex = createdNodesByType[nodeDef.type].findIndex(
+            (n) => n.id === nodeId
+          );
+          if (existingNodeIndex === -1) {
+            createdNodesByType[nodeDef.type].push({
+              id: nodeId,
+              index: i,
+              properties: nodeProps
+            });
+          } else {
+            createdNodesByType[nodeDef.type][existingNodeIndex].properties = nodeProps;
+          }
+          if (Object.keys(parentContext).length === 0) {
+            if (!rootNodes.nodes) rootNodes.nodes = {};
+            rootNodes.nodes[nodeDef.type] = {
+              id: nodeId,
+              ...nodeProps
+            };
+          }
+          if (nodeDef.isReference) {
+            if (!itemContext.global[nodeDef.type]) {
+              itemContext.global[nodeDef.type] = [];
+            }
+            itemContext.global[nodeDef.type].push({
+              id: nodeId,
+              ...nodeProps
+            });
+          }
+        }
+        this.createRelationshipsWithJSONPath(
+          schema.relationships,
+          itemContext,
+          relationships
+        );
+        if (schema.subMappings) {
+          for (const subMapping of schema.subMappings) {
+            const { nodes: childNodes, relationships: childRels } = await this.mapDataToGraph(
+              subMapping,
+              item,
+              addedNodeIds,
+              // Pass the SAME set down recursively
+              itemContext,
+              rootNodes
+            );
+            nodes.push(...childNodes);
+            relationships.push(...childRels);
+          }
+        }
+      }
+      return { nodes, relationships };
+    }
+    createRelationshipsWithJSONPath(relationshipDefs, context, relationships) {
+      for (const relDef of relationshipDefs) {
+        let fromIds = [];
+        let toIds = [];
+        if (relDef.from.selector && relDef.from.nodeType) {
+          fromIds = this.resolveNodeIds(
+            relDef.from.nodeType,
+            relDef.from.selector,
+            context
+          );
+        } else if (relDef.from.path) {
+          const needsArray = relDef.mapping !== "oneToOne";
+          const result = this.evaluateContextPath(
+            relDef.from.path,
+            context,
+            needsArray
+          );
+          if (Array.isArray(result)) {
+            fromIds = result.map((r) => typeof r === "object" && r !== null ? r.id : r).filter((id) => id != null);
+          } else if (result != null) {
+            const id = typeof result === "object" && result !== null ? result.id : result;
+            if (id != null) {
+              fromIds = [id];
+            }
+          }
+        }
+        if (relDef.to.selector && relDef.to.nodeType) {
+          toIds = this.resolveNodeIds(
+            relDef.to.nodeType,
+            relDef.to.selector,
+            context
+          );
+        } else if (relDef.to.path) {
+          const needsArray = relDef.mapping !== "oneToOne";
+          const result = this.evaluateContextPath(
+            relDef.to.path,
+            context,
+            needsArray
+          );
+          if (Array.isArray(result)) {
+            toIds = result.map((r) => typeof r === "object" && r !== null ? r.id : r).filter((id) => id != null);
+          } else if (result != null) {
+            const id = typeof result === "object" && result !== null ? result.id : result;
+            if (id != null) {
+              toIds = [id];
+            }
+          }
+        }
+        if (fromIds.length === 0 || toIds.length === 0) {
+          console.log(`No nodes found for relationship ${relDef.type}`);
+          continue;
+        }
+        if (relDef.mapping === "oneToOne") {
+          const maxLength = Math.min(fromIds.length, toIds.length);
+          for (let i = 0; i < maxLength; i++) {
+            relationships.push({
+              from: fromIds[i],
+              to: toIds[i],
+              type: relDef.type
+            });
+          }
+        } else {
+          for (const fromId of fromIds) {
+            for (const toId of toIds) {
+              relationships.push({
+                from: fromId,
+                to: toId,
+                type: relDef.type
+              });
+            }
+          }
+        }
+      }
+    }
+    // Legacy method - keep for backward compatibility
+    resolveNodeIds(nodeType, selector, context) {
+      var _a, _b, _c, _d;
+      if (selector === "current" && ((_a = context.current) == null ? void 0 : _a[nodeType])) {
+        return [context.current[nodeType].id];
+      }
+      if (selector === "parent" && ((_b = context.parent) == null ? void 0 : _b[nodeType])) {
+        return [context.parent[nodeType].id];
+      }
+      if (selector === "root" && ((_c = context.root) == null ? void 0 : _c[nodeType])) {
+        return [context.root[nodeType].id];
+      }
+      if (selector.includes("=")) {
+        const [propName, propValue] = selector.split("=");
+        if ((_d = context.global) == null ? void 0 : _d[nodeType]) {
+          const matchingNodes = context.global[nodeType].filter(
+            (n) => n[propName] === propValue
+          );
+          return matchingNodes.map((n) => n.id);
+        }
+      }
+      return [];
+    }
+    generateNodeId(nodeDef, data) {
+      const idField = nodeDef.idField || "id";
+      switch (nodeDef.idStrategy) {
+        case "fixed":
+          if (!nodeDef.idValue) {
+            throw new Error(
+              `Fixed ID strategy requires an idValue for node type ${nodeDef.type}`
+            );
+          }
+          return nodeDef.idValue;
+        case "fromData":
+          const idValue = idField === "." ? data : this.getNestedValue(data, idField.split("."));
+          if (idValue === null || idValue === void 0) {
+            throw new Error(
+              `ID field '${idField}' not found in data for node type ${nodeDef.type} using 'fromData' strategy.`
+            );
+          }
+          return String(idValue);
+        // Ensure ID is a string
+        case "uuid":
+        default:
+          return v4();
+      }
+    }
+    extractNodeProperties(nodeDef, data, context) {
+      const result = {};
+      result.createdAt = DateTime.fromStandardDate(/* @__PURE__ */ new Date());
+      for (const propDef of nodeDef.properties) {
+        let value;
+        if (propDef.path === "." && (typeof data !== "object" || data === null)) {
+          value = data;
+        } else if (propDef.path && propDef.path.startsWith("$")) {
+          value = this.evaluateContextPath(propDef.path, context, false);
+        } else if (propDef.path) {
+          value = this.getNestedValue(data, propDef.path.split("."));
+        }
+        if (propDef.transformerId) {
+          const transformer = this.transformerRegistry.get(propDef.transformerId);
+          if (transformer) {
+            value = transformer(value, context, propDef.transformerParams);
+          }
+        }
+        if (value === void 0 && propDef.default !== void 0) {
+          value = propDef.default;
+        }
+        if (propDef.type) {
+          value = this.convertValueToType(value, propDef.type);
+        }
+        result[propDef.name] = value;
+      }
+      return result;
+    }
+    convertValueToType(value, type) {
+      if (value === null || value === void 0) {
+        return value;
+      }
+      switch (type.toLowerCase()) {
+        case "integer":
+        case "int":
+          return int(value);
+        case "float":
+        case "double":
+          return Number.isFinite(value) ? value : parseFloat(value);
+        case "boolean":
+        case "bool":
+          return Boolean(value);
+        case "string":
+          return String(value);
+        case "date":
+          return new Date(value);
+        default:
+          return value;
+      }
+    }
+    getNestedValue(obj, path) {
+      return path.reduce(
+        (prev, curr) => prev && prev[curr] !== void 0 ? prev[curr] : void 0,
+        obj
+      );
+    }
+    async createNodeQuery(node) {
+      const { id, type, ...properties } = node;
+      const varName = this.variableGenerator.getNext();
+      const nodeDefinition = this.findNodeDefinition(type);
+      const isMerge = (nodeDefinition == null ? void 0 : nodeDefinition.isReference) === true;
+      const operation = isMerge ? "MERGE" : "CREATE";
+      const query = `
+      ${operation} (${varName}:${type} {id: $id_${varName}}) 
+      SET ${varName} += $props_${varName}
+    `;
+      const params = {
+        [`id_${varName}`]: id,
+        [`props_${varName}`]: properties
+      };
+      return { query, params, isMerge };
+    }
+    findNodeDefinition(type) {
+      const findInMapping = (mapping) => {
+        const direct = mapping.nodes.find((n) => n.type === type);
+        if (direct) return direct;
+        if (mapping.subMappings) {
+          for (const subMapping of mapping.subMappings) {
+            const inSub = findInMapping(subMapping);
+            if (inSub) return inSub;
+          }
+        }
+        return void 0;
+      };
+      return findInMapping(this.schema);
+    }
+    async createRelationshipQuery(relationship) {
+      const { from, to, type } = relationship;
+      const relVar = this.variableGenerator.getNext();
+      const query = `
       MATCH (source) WHERE source.id = $fromId
       MATCH (target) WHERE target.id = $toId
-      CREATE (source)-[${this.variableGenerator.getNext()}:${n}]->(target)
-    `,params:{fromId:r,toId:i}}}serializeSchema(){return JSON.stringify(this.schema,null,2)}static fromSerialized(t,r){let i=JSON.parse(t);return new e(i,r)}};exports.JSON2Cypher=X;exports.TransformerRegistry=V;exports.VariableGenerator=B;return exports;})({},crypto);
+      CREATE (source)-[${relVar}:${type}]->(target)
+    `;
+      const params = {
+        fromId: from,
+        toId: to
+      };
+      return { query, params };
+    }
+    serializeSchema() {
+      return JSON.stringify(this.schema, null, 2);
+    }
+    static fromSerialized(serializedSchema, transformerRegistry) {
+      const schema = JSON.parse(serializedSchema);
+      return new _JSON2Cypher(schema, transformerRegistry);
+    }
+  };
+
+  exports.JSON2Cypher = JSON2Cypher;
+  exports.TransformerRegistry = TransformerRegistry;
+  exports.VariableGenerator = VariableGenerator;
+
+  return exports;
+
+})({});

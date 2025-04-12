@@ -1,6 +1,7 @@
 // tsup.browser.config.ts
 import { defineConfig } from 'tsup';
 import { replaceNeo4jPlugin } from './replace-neo4j.js';
+import { replaceUuidPlugin } from './replace-uuid.js';
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -10,10 +11,14 @@ export default defineConfig({
   splitting: false,
   sourcemap: false,
   clean: true,
-  minify: true,
+  minify: false,
   treeshake: true,
   shims: true,
   keepNames: false,
-  // Inject our custom plugin to intercept and replace neo4j imports
-  esbuildPlugins: [replaceNeo4jPlugin],
+  external: ['crypto'],
+  // Inject our custom plugins
+  esbuildPlugins: [
+    replaceNeo4jPlugin,
+    replaceUuidPlugin,
+  ],
 });
