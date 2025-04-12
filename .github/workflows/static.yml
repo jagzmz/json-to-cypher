@@ -1,13 +1,13 @@
-# Simple workflow for deploying static content to GitHub Pages
+# Workflow for deploying static content to GitHub Pages, triggered by successful test run on main
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
-  push:
-    branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["Run Tests"] # Name of the workflow defined in tests.yml
+    types:
+      - completed
+  # Remove push trigger
+  # Remove workflow_dispatch trigger
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -18,12 +18,16 @@ permissions:
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: "pages-${{ github.ref }}" # Group by branch to allow concurrent PR deploys if needed later, but main push deploys are still sequential
+  cancel-in-progress: false # Changed to false for deploy, true might be better for tests only? Let's keep false for now.
 
 jobs:
+  # Remove the test job from tests.yml
+
   # Single deploy job since we're just deploying
   deploy:
+    # Condition to ensure this runs only for successful conclusions on the main branch
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
