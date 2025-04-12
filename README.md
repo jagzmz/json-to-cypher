@@ -1,8 +1,8 @@
-# JSON-to-Cypher Mapper (GraphMapper) 🕸️
+# JSON-to-Cypher Mapper
 
 ## Overview ✨
 
-`GraphMapper` is a TypeScript utility designed to transform your JSON data into Cypher queries suitable for Neo4j. Define a mapping schema once, and GraphMapper generates the `CREATE` and `MERGE` statements for nodes and relationships based on your data structures.
+`JSON-to-Cypher` is a TypeScript utility designed to transform your JSON data into Cypher queries suitable for Neo4j. Define a mapping schema once, and JSON-to-Cypher generates the `CREATE` and `MERGE` statements for nodes and relationships based on your data structures.
 
 **Think of it as a JSON-to-Cypher translator:** It takes your JSON data and schema definition, and outputs the Cypher queries needed to represent that data in a Neo4j graph.
 
@@ -22,7 +22,7 @@
 
 ### 1. The Schema (`SchemaMapping`)
 
-The heart of GraphMapper is the schema. It tells the mapper how to interpret your source data.
+The heart of JSON-to-Cypher is the schema. It tells the mapper how to interpret your source data.
 
 ```typescript
 interface SchemaMapping {
@@ -51,10 +51,10 @@ interface NodeDefinition {
 
 **Node Identification (`idStrategy`)**
 
-This is crucial for how GraphMapper finds or creates nodes:
+This is crucial for how JSON-to-Cypher finds or creates nodes:
 
 *   `'uuid'`: **Use Case:** When your source data doesn't have a natural unique ID, or you want guaranteed unique graph IDs.
-    *   GraphMapper generates a unique UUID for each node.
+    *   JSON-to-Cypher generates a unique UUID for each node.
     *   Example: `{ type: 'LogEntry', idStrategy: 'uuid', properties: [...] }`
 *   `'fromData'`: **Use Case:** Your source data already contains a unique identifier for this entity.
     *   Requires `idField`: A JSONPath expression pointing to the ID field in your source data (e.g., `'userId'`, `'productSKU'`).
@@ -65,7 +65,7 @@ This is crucial for how GraphMapper finds or creates nodes:
 
 **Reference Nodes (`isReference: true`)**
 
-*   When `isReference` is true, GraphMapper uses `MERGE` in Cypher instead of `CREATE`.
+*   When `isReference` is true, JSON-to-Cypher uses `MERGE` in Cypher instead of `CREATE`.
 *   This is ideal for nodes that represent shared concepts (like categories, tags, statuses) where you want to connect to the *same* node instance if it already exists, rather than creating duplicates. Use with `'fixed'` or `'fromData'` if the reference data has a stable ID.
 
 ### 3. Defining Properties (`PropertyDefinition`)
@@ -124,7 +124,7 @@ These fields use JSONPath expressions to find the **unique ID** of the source an
 ## Getting Started 🚀
 
 ```typescript
-import { GraphMapper } from './GraphMapper';
+import { JSON-to-Cypher } from './JSON-to-Cypher';
 // Assume Neo4jQuery is your class/object that handles DB connection and query execution
 // import { Neo4jQuery } from '../neo4jQuery/Neo4jQuery';
 
@@ -174,7 +174,7 @@ const usersData = [
 // const neo4jQuery = new Neo4jQuery(/* connection details */);
 
 // 4. Create Mapper and Generate Queries
-// const mapper = new GraphMapper(schema); // Note: Neo4jQuery object is no longer needed in constructor if only generating queries
+// const mapper = new JSON-to-Cypher(schema); // Note: Neo4jQuery object is no longer needed in constructor if only generating queries
 // const { queries } = await mapper.generateQueries(usersData);
 
 // console.log('Generated Queries:');
@@ -228,7 +228,7 @@ registry.register('cleanupText', (value) => value.trim().toLowerCase());
 // { name: 'description', path: 'desc', transformerId: 'cleanupText' }
 
 // Pass registry to constructor:
-// const mapper = new GraphMapper(neo4jQuery, schema, registry);
+// const mapper = new JSON-to-Cypher(neo4jQuery, schema, registry);
 ```
 
 **Default Transformers:** `toString`, `toNumber`, `extractText`, `extractQuestionText`, `extractAnswerText`, `parentId`, `jsonpath`.
@@ -274,11 +274,11 @@ constructor(
 
 *   `async generateQueries(data: any): Promise<{ queries: Array<{ query: string; params: Record<string, any>; isMerge?: boolean; }> }>`: Processes the data according to the schema and returns an array of Cypher query objects (query string and parameters).
 *   `serializeSchema(): string`: Returns the schema as a JSON string.
-*   `static fromSerialized(serializedSchema: string, transformerRegistry?: TransformerRegistry): GraphMapper`: Creates a mapper instance from a serialized schema string.
+*   `static fromSerialized(serializedSchema: string, transformerRegistry?: TransformerRegistry): JSON-to-Cypher`: Creates a mapper instance from a serialized schema string.
 
 ## Dive Deeper: Examples in Tests 🔍🎯
 
-**The most comprehensive examples are in the test suite!** Explore `tests/GraphMapper.test.ts` to see various scenarios in action, including:
+**The most comprehensive examples are in the test suite!** Explore `tests/JSON-to-Cypher.test.ts` to see various scenarios in action, including:
 
 *   Different ID strategies
 *   Type conversions
