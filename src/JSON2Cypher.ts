@@ -9,7 +9,7 @@ import {
   TransformerRegistry,
 } from "./TransformerRegistry";
 
-export class GraphMapper {
+export class JSON2Cypher {
   private readonly variableGenerator: VariableGenerator;
   private readonly transformerRegistry: TransformerRegistry;
 
@@ -697,14 +697,14 @@ export class GraphMapper {
   }
 
   serializeSchema(): string {
-    return JSON.stringify(this.schema);
+    return JSON.stringify(this.schema, null, 2);
   }
 
   static fromSerialized(
     serializedSchema: string,
     transformerRegistry?: TransformerRegistry
-  ): GraphMapper {
-    const schema = JSON.parse(serializedSchema) as SchemaMapping;
-    return new GraphMapper(schema, transformerRegistry);
+  ): JSON2Cypher {
+    const schema = JSON.parse(serializedSchema);
+    return new JSON2Cypher(schema, transformerRegistry);
   }
 }

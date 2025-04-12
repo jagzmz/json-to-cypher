@@ -1,4 +1,4 @@
-export { GraphMapper } from "./GraphMapper";
+export { JSON2Cypher } from "./JSON2Cypher";
 export {
   TransformerRegistry,
   type SchemaMapping,

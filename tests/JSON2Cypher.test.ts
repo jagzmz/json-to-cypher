@@ -1,5 +1,6 @@
-import { GraphMapper } from "../src/GraphMapper";
-import { TransformerRegistry, SchemaMapping } from "../src/TransformerRegistry";
+import { JSON2Cypher } from "../src/JSON2Cypher";
+import { TransformerRegistry, type SchemaMapping } from "../src/TransformerRegistry";
+import { VariableGenerator } from "../src/VariableGenerator";
 import { isDateTime, isInt, int } from "neo4j-driver";
 import {
   expectNodeProps,
@@ -10,8 +11,9 @@ import {
   hasValidCreatedAt,
 } from "./testUtils"; // Import utils
 
-describe("GraphMapper", () => {
-  let graphMapper: GraphMapper;
+describe("JSON2Cypher", () => {
+  let json2Cypher: JSON2Cypher;
+  let variableGenerator: VariableGenerator;
   let mockTransaction: any;
 
   const sampleSchema: SchemaMapping = {
@@ -82,17 +84,17 @@ describe("GraphMapper", () => {
       run: jest.fn().mockResolvedValue({ records: [] }),
     };
 
-    // Create GraphMapper instance
-    graphMapper = new GraphMapper(sampleSchema);
+    // Create JSON2Cypher instance
+    json2Cypher = new JSON2Cypher(sampleSchema);
   });
 
   describe("constructor", () => {
     it("should initialize with provided schema", () => {
-      expect(graphMapper).toBeDefined();
+      expect(json2Cypher).toBeDefined();
     });
 
     it("should create a default TransformerRegistry if none provided", () => {
-      const mapper = new GraphMapper(sampleSchema);
+      const mapper = new JSON2Cypher(sampleSchema);
       expect(mapper).toBeDefined();
       // We can't directly test the private transformerRegistry property
     });
@@ -101,7 +103,7 @@ describe("GraphMapper", () => {
       const customRegistry = new TransformerRegistry();
       customRegistry.register("customTransformer", () => "transformed");
 
-      const mapper = new GraphMapper(sampleSchema, customRegistry);
+      const mapper = new JSON2Cypher(sampleSchema, customRegistry);
       expect(mapper).toBeDefined();
       // We can't directly test if it's using the custom registry, but we can test its behavior
     });
@@ -109,7 +111,7 @@ describe("GraphMapper", () => {
 
   describe("generateQueries", () => {
     it("should process data and generate correct Cypher queries", async () => {
-      const { queries } = await graphMapper.generateQueries(sampleData);
+      const { queries } = await json2Cypher.generateQueries(sampleData);
 
       // Expect 6 queries: 2 Persons + 2 Orgs + 2 Rels
       expect(queries.length).toBe(6);
@@ -160,7 +162,7 @@ describe("GraphMapper", () => {
     });
 
     it("should return empty queries for empty data", async () => {
-      const { queries } = await graphMapper.generateQueries([]);
+      const { queries } = await json2Cypher.generateQueries([]);
       expect(queries).toEqual([]);
     });
   });
@@ -181,7 +183,7 @@ describe("GraphMapper", () => {
         },
       ];
 
-      await graphMapper.generateQueries(testData);
+      await json2Cypher.generateQueries(testData);
 
       // We can't easily check the specific parameters without knowing the exact implementation
       // So we'll just verify the test runs without errors
@@ -202,13 +204,13 @@ describe("GraphMapper", () => {
         },
       ];
 
-      await graphMapper.generateQueries(testData);
+      await json2Cypher.generateQueries(testData);
     });
   });
 
   describe("createdAt timestamp", () => {
     it("should add createdAt timestamp to all nodes", async () => {
-      const { queries } = await graphMapper.generateQueries(sampleData);
+      const { queries } = await json2Cypher.generateQueries(sampleData);
 
       const nodeCalls = queries.filter(
         (query) =>
@@ -256,7 +258,7 @@ describe("GraphMapper", () => {
         },
       };
 
-      const jsonPathMapper = new GraphMapper(schemaWithJsonPath);
+      const jsonPathMapper = new JSON2Cypher(schemaWithJsonPath);
       const { queries } = await jsonPathMapper.generateQueries(jsonPathData);
 
       expect(queries.length).toBe(1);
@@ -270,11 +272,11 @@ describe("GraphMapper", () => {
 
   describe("serializeSchema and fromSerialized", () => {
     it("should correctly serialize and deserialize schema", () => {
-      const serialized = graphMapper.serializeSchema();
+      const serialized = json2Cypher.serializeSchema();
       expect(typeof serialized).toBe("string");
 
-      const deserializedMapper = GraphMapper.fromSerialized(serialized);
-      expect(deserializedMapper).toBeInstanceOf(GraphMapper);
+      const deserializedMapper = JSON2Cypher.fromSerialized(serialized);
+      expect(deserializedMapper).toBeInstanceOf(JSON2Cypher);
 
       // Test the deserialized mapper works
       expect(deserializedMapper.serializeSchema()).toBe(serialized);
@@ -287,8 +289,8 @@ describe("GraphMapper", () => {
 
     beforeEach(() => {
       // Use a workaround to access the private method
-      mapDataToGraphMethod = (graphMapper as any).mapDataToGraph.bind(
-        graphMapper
+      mapDataToGraphMethod = (json2Cypher as any).mapDataToGraph.bind(
+        json2Cypher
       );
     });
 
@@ -428,8 +430,8 @@ describe("GraphMapper", () => {
         ],
       };
 
-      // Create a new GraphMapper instance with the nested schema
-      const nestedMapper = new GraphMapper(nestedSchema);
+      // Create a new JSON2Cypher instance with the nested schema
+      const nestedMapper = new JSON2Cypher(nestedSchema);
       const mapNestedDataMethod = (nestedMapper as any).mapDataToGraph.bind(
         nestedMapper
       );
@@ -523,8 +525,8 @@ describe("GraphMapper", () => {
         stringValue: 42,
       };
 
-      // Create a GraphMapper instance with the types schema
-      const typesMapper = new GraphMapper(typesSchema);
+      // Create a JSON2Cypher instance with the types schema
+      const typesMapper = new JSON2Cypher(typesSchema);
       const mapTypesMethod = (typesMapper as any).mapDataToGraph.bind(
         typesMapper
       );
@@ -582,7 +584,7 @@ describe("GraphMapper", () => {
         authorName: "Jane Doe",
       };
 
-      const transformerMapper = new GraphMapper(transformerSchema);
+      const transformerMapper = new JSON2Cypher(transformerSchema);
       const { queries } = await transformerMapper.generateQueries(
         transformerData
       );
