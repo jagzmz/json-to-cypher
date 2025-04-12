@@ -11,16 +11,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize JSON editors
     const jsonEditor = new JSONEditor(document.getElementById('json-editor'), {
-        mode: 'tree',
-        modes: ['tree', 'code', 'text'],
+        mode: 'code',
+        modes: ['tree', 'code'],
         mainMenuBar: true,
         navigationBar: true,
         search: true
     });
     
     const schemaEditor = new JSONEditor(document.getElementById('schema-editor'), {
-        mode: 'tree',
-        modes: ['tree', 'code', 'text'],
+        mode: 'code',
+        modes: ['tree', 'code'],
         mainMenuBar: true,
         navigationBar: true,
         search: true
@@ -103,13 +103,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load sample data
     loadSampleDataBtn.addEventListener('click', function() {
         jsonEditor.set(sampleData);
-        jsonEditor.expandAll();
+        // jsonEditor.expandAll();
+        // Also load the corresponding sample schema for the basic example -- KEEP THE REVERTED STATE
+        // schemaEditor.set(sampleSchema);
+        // schemaEditor.expandAll();
     });
 
     // Load sample schema
     loadSampleSchemaBtn.addEventListener('click', function() {
         schemaEditor.set(sampleSchema);
-        schemaEditor.expandAll();
+        // schemaEditor.expandAll();
     });
 
     // Load example based on selection
@@ -118,9 +121,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (selectedExample === 'basic') {
             jsonEditor.set(sampleData);
-            jsonEditor.expandAll();
+            // jsonEditor.expandAll();
             schemaEditor.set(sampleSchema);
-            schemaEditor.expandAll();
+            // schemaEditor.expandAll();
             return;
         }
         
@@ -128,9 +131,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (window.advancedExamples && window.advancedExamples[selectedExample]) {
             const example = window.advancedExamples[selectedExample];
             jsonEditor.set(example.data);
-            jsonEditor.expandAll();
+            // jsonEditor.expandAll();
             schemaEditor.set(example.schema);
-            schemaEditor.expandAll();
+            // schemaEditor.expandAll();
         } else {
             showError('Selected example not found. Make sure advanced-examples.js is loaded.');
         }
@@ -167,6 +170,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Visualize the graph
             visualizeGraph(result.queries);
+            
+            // Scroll to the graph visualization after a short delay
+            setTimeout(() => {
+                graphVis.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100); // 100ms delay
             
         } catch (error) {
             showError(`Error: ${error.message}`);

@@ -4,7 +4,7 @@ import {
   type SchemaMapping,
 } from "../src/TransformerRegistry";
 import { VariableGenerator } from "../src/VariableGenerator";
-import { isDateTime, int } from "neo4j-driver-core";
+import { isDateTime, int } from "neo4j-driver";
 import {
   expectNodeProps,
   expectRelationshipProps,
@@ -293,7 +293,7 @@ describe("JSON2Cypher", () => {
     });
 
     it("should correctly map data to nodes and relationships", async () => {
-      const result = await mapDataToGraphMethod(sampleSchema, sampleData);
+      const result = await mapDataToGraphMethod(sampleSchema, sampleData, new Set<string>());
 
       // Verify the structure of the result
       expect(result).toHaveProperty("nodes");
@@ -435,7 +435,7 @@ describe("JSON2Cypher", () => {
       );
 
       // Map the nested data
-      const result = await mapNestedDataMethod(nestedSchema, nestedData);
+      const result = await mapNestedDataMethod(nestedSchema, nestedData, new Set<string>());
 
       // Verify nodes - 1 Company + 2 Departments
       expect(result.nodes.length).toBe(3);
@@ -530,7 +530,7 @@ describe("JSON2Cypher", () => {
       );
 
       // Map the data
-      const result = await mapTypesMethod(typesSchema, typesData);
+      const result = await mapTypesMethod(typesSchema, typesData, new Set<string>());
 
       // Verify node was created
       expect(result.nodes.length).toBe(1);
@@ -594,6 +594,128 @@ describe("JSON2Cypher", () => {
       expectCreateNodeQuery(queries[0], "Article", "a1", {
         initials: "JD", // Expect the transformed initials
       });
+    });
+  });
+
+  describe("Advanced Examples", () => {
+    it("should handle 'Products with Categories and Tags' using uuid for Tags", async () => {
+      // Data and schema from docs/advanced-examples.js (with Tag idStrategy='uuid')
+      const productsWithCategoriesData = [
+        {
+          productId: "prod1",
+          name: "Smartphone",
+          price: 799.99,
+          category: "Electronics",
+          tags: ["mobile", "tech", "gadget"],
+        },
+        {
+          productId: "prod2",
+          name: "Laptop",
+          price: 1299.99,
+          category: "Electronics",
+          tags: ["computer", "tech", "work", "appliance"],
+        },
+        {
+          productId: "prod3",
+          name: "Coffee Maker",
+          price: 89.99,
+          category: "Kitchen",
+          tags: ["home", "appliance"],
+        },
+      ];
+
+      const productsWithCategoriesSchema: SchemaMapping = {
+        iterationMode: 'collection',
+        nodes: [
+          {
+            type: 'Product',
+            idStrategy: 'fromData',
+            idField: 'productId',
+            properties: [
+              { name: 'name', path: 'name' },
+              { name: 'price', path: 'price', type: 'float' },
+            ],
+          },
+          {
+            type: 'Category',
+            idStrategy: 'fromData',
+            idField: 'category',
+            isReference: true,
+            properties: [{ name: 'name', path: 'category' }],
+          },
+        ],
+        relationships: [
+          {
+            type: 'IN_CATEGORY',
+            from: { path: '$current.Product.id' },
+            to: { path: '$current.Category.id' },
+          },
+        ],
+        subMappings: [
+          {
+            sourceDataPath: 'tags',
+            iterationMode: 'collection',
+            nodes: [
+              {
+                type: 'Tag',
+                idStrategy: 'fromData',
+                idField: '.',
+                isReference: true,
+                properties: [{ name: 'name', path: '.' }],
+              },
+            ],
+            relationships: [
+              {
+                type: 'HAS_TAG',
+                from: { path: '$parent.Product.id' },
+                to: { path: '$current.Tag.id' },
+              },
+            ],
+          },
+        ],
+      };
+
+      const mapper = new JSON2Cypher(productsWithCategoriesSchema);
+      const { queries } = await mapper.generateQueries(productsWithCategoriesData);
+
+      // --- Assertions ---
+      // Expected total queries: 3 Products + 2 Categories (merged) + 7 Tags (merged) + 3 IN_CATEGORY + 9 HAS_TAG = 24
+      expect(queries.length).toBe(24); // UPDATED EXPECTED COUNT
+
+      // Spot check a few things
+      const productQueries = queries.filter(q => q.query.includes(':Product'));
+      const categoryQueries = queries.filter(q => q.query.includes(':Category'));
+      const tagQueries = queries.filter(q => q.query.includes(':Tag'));
+      const inCategoryRels = queries.filter(q => q.query.includes(':IN_CATEGORY'));
+      const hasTagRels = queries.filter(q => q.query.includes(':HAS_TAG'));
+
+      expect(productQueries.length).toBe(3); // 3 Products created
+      expect(categoryQueries.length).toBe(2); // 2 Categories merged (Electronics, Kitchen)
+      expect(tagQueries.length).toBe(7);      // 7 unique Tags merged (mobile, tech, gadget, computer, work, home, appliance)
+      expect(inCategoryRels.length).toBe(3);  // 3 Product -> Category relationships
+      expect(hasTagRels.length).toBe(9);      // 9 Product -> Tag relationships (UPDATED COUNT)
+
+      // Check a specific product
+      expectCreateNodeQuery(productQueries[0], 'Product', 'prod1', { name: 'Smartphone', price: 799.99 });
+
+      // Check a specific category merge
+      expectMergeNodeQuery(categoryQueries[0], 'Category', expect.any(String), expect.any(String), 'Electronics', { name: 'Electronics' });
+
+      // Check a specific tag merge (should be MERGE now)
+      const firstTagQuery = tagQueries.find(q => q.params[Object.keys(q.params).find(k => k.startsWith('id_'))!] === 'mobile');
+      expect(firstTagQuery).toBeDefined();
+      expect(firstTagQuery?.query.includes('MERGE')).toBeTruthy();
+      expectMergeNodeQuery(firstTagQuery!, 'Tag', expect.any(String), expect.any(String), 'mobile', { name: 'mobile' });
+
+      // Check a specific HAS_TAG relationship (linking product prod1 to the merged 'mobile' tag)
+      const firstHasTagRel = hasTagRels.find(q => q.params.fromId === 'prod1' && q.params.toId === 'mobile');
+      expect(firstHasTagRel).toBeDefined();
+      expectRelationshipQuery(firstHasTagRel!, 'HAS_TAG', { from: 'prod1', to: 'mobile' });
+
+      // Check the new HAS_TAG relationship (linking product prod2 to the merged 'appliance' tag)
+      const laptopApplianceRel = hasTagRels.find(q => q.params.fromId === 'prod2' && q.params.toId === 'appliance');
+      expect(laptopApplianceRel).toBeDefined();
+      expectRelationshipQuery(laptopApplianceRel!, 'HAS_TAG', { from: 'prod2', to: 'appliance' });
     });
   });
 });

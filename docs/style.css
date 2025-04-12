@@ -133,8 +133,7 @@ header p {
 .input-row {
     display: flex;
     gap: 1.5rem;
-    min-height: 300px;
-    max-height: 400px;
+    min-height: 600px;
 }
 
 .input-column {

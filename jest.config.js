@@ -4,10 +4,13 @@ export default {
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
   moduleNameMapper: {
+    // Map jsonpath-plus-browser to its CJS build for Jest
+    '^jsonpath-plus-browser$': '<rootDir>/node_modules/.pnpm/jsonpath-plus-browser@5.0.6/node_modules/jsonpath-plus-browser/dist/index-node-cjs.js',
     '^(\.{1,2}/.*)\.js$': '$1',
   },
+  extensionsToTreatAsEsm: ['.ts'],
   transform: {
-    '^.+\.tsx?$': [
+    '^.+\\.ts$': [
       'ts-jest',
       {
         useESM: true,
@@ -15,4 +18,9 @@ export default {
       },
     ],
   },
+  // Remove transformIgnorePatterns - no longer needed with module mapping
+  // transformIgnorePatterns: [
+  //   '/node_modules/(?!jsonpath-plus-browser).+\\.js$',
+  //   '/node_modules/(?!jsonpath-plus-browser).+\\.mjs$'
+  // ],
 }; 

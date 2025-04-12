@@ -1,6 +1,6 @@
 import { JSONPath } from "jsonpath-plus-browser";
 import * as neo4j from "neo4j-driver";
-import { v4 as uuidv4 } from "uuid";
+import * as uuid from "uuid";
 import { VariableGenerator } from "./VariableGenerator";
 import {
   NodeDefinition,
@@ -217,9 +217,11 @@ export class JSON2Cypher {
       isMerge?: boolean;
     }>;
   }> {
+    const addedNodeIds = new Set<string>(); // Initialize the shared set here
     const { nodes, relationships } = await this.mapDataToGraph(
       this.schema,
-      data
+      data,
+      addedNodeIds // Pass the set to the initial call
     );
 
     const nodeQueries = await Promise.all(
@@ -235,6 +237,7 @@ export class JSON2Cypher {
   private async mapDataToGraph(
     schema: SchemaMapping,
     data: any,
+    addedNodeIds: Set<string>, // Accept the set as a parameter
     parentContext: any = {},
     rootNodes: Record<string, any> = {}
   ): Promise<{
@@ -311,9 +314,11 @@ export class JSON2Cypher {
           ...nodeProps,
         };
 
-        // Add node to nodes array if it hasn't been added yet
-        if (!nodes.some((n) => n.id === nodeId)) {
+        // Add node to the main nodes array ONLY if its ID hasn't been added before.
+        // This prevents duplicates, especially for reference nodes across iterations.
+        if (!addedNodeIds.has(nodeId)) {
           nodes.push(node);
+          addedNodeIds.add(nodeId); // Mark this ID as added to the final list
         }
 
         // Track this node by type for relationship creation
@@ -367,10 +372,16 @@ export class JSON2Cypher {
       if (schema.subMappings) {
         for (const subMapping of schema.subMappings) {
           const { nodes: childNodes, relationships: childRels } =
-            await this.mapDataToGraph(subMapping, item, itemContext, rootNodes);
+            await this.mapDataToGraph(
+              subMapping, 
+              item, 
+              addedNodeIds, // Pass the SAME set down recursively
+              itemContext, 
+              rootNodes
+            );
 
-          nodes.push(...childNodes);
-          relationships.push(...childRels);
+            nodes.push(...childNodes);
+            relationships.push(...childRels);
         }
       }
     }
@@ -534,7 +545,7 @@ export class JSON2Cypher {
         return nodeDef.idValue;
       case "fromData":
         // Use getNestedValue to handle potentially nested idFields
-        const idValue = this.getNestedValue(data, idField.split('.'));
+        const idValue = idField === '.' ? data : this.getNestedValue(data, idField.split('.'));
         if (idValue === null || idValue === undefined) {
           // Throw error if ID is missing for fromData strategy
           throw new Error(
@@ -544,7 +555,7 @@ export class JSON2Cypher {
         return String(idValue); // Ensure ID is a string
       case "uuid":
       default:
-        return uuidv4();
+        return uuid.v4();
     }
   }
 
@@ -561,8 +572,12 @@ export class JSON2Cypher {
     for (const propDef of nodeDef.properties) {
       let value;
 
+      // Special case: If path is '.' and data is primitive, use data directly
+      if (propDef.path === '.' && (typeof data !== 'object' || data === null)) {
+          value = data;
+      }
       // If propDef.path is provided and starts with $, treat as JSONPath
-      if (propDef.path && propDef.path.startsWith("$")) {
+      else if (propDef.path && propDef.path.startsWith("$")) {
         // For properties, we typically want a single value, not an array
         value = this.evaluateContextPath(propDef.path, context, false);
       }

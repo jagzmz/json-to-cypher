@@ -125,10 +125,8 @@ const productsWithCategoriesSchema = {
                     idStrategy: 'fromData',
                     idField: '.',
                     isReference: true,
-                    properties: [
-                        { name: 'name', path: '.' }
-                    ]
-                }
+                    properties: [{ name: 'name', path: '.' }],
+                },
             ],
             relationships: [
                 {
