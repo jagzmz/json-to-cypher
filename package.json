@@ -1,6 +1,6 @@
 {
   "name": "@jagzmz/json-to-cypher",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Convert JSON to Cypher queries",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -43,7 +43,7 @@
     "type": "git",
     "url": "https://github.com/jagzmz/json-to-cypher"
   },
-  "homepage": "https://github.com/jagzmz/json-to-cypher",
+  "homepage": "https://jagzmz.github.io/json-to-cypher",
   "bugs": {
     "url": "https://github.com/jagzmz/json-to-cypher/issues"
   },

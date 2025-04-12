@@ -23,27 +23,5 @@ This is a simple web-based demo of the [JSON2Cypher](https://github.com/jagzmz/j
   - Products with Categories: Shows reference nodes with many-to-many relationships
   - Orders with Products and Customers: Complex schema with multiple relationship types
 
-## Deploying to GitHub Pages
-
-To deploy this demo to GitHub Pages:
-
-1. Fork or clone this repository
-2. Make sure you've built the project (`npm run build`)
-3. Commit and push the changes, including the `playground` folder
-4. Go to your repository settings on GitHub
-5. Under "GitHub Pages", select the source as "Deploy from a branch"
-6. Select the "main" branch and "/playground" folder
-7. Click "Save"
-8. Your site will be published at `https://[your-username].github.io/[repo-name]/`
-
-## Manual Setup
-
-If you're not using the build script, you need to:
-
-1. Make sure the `index.global.js` file is copied from the `dist` folder to the `playground` folder
-2. Deploy the entire `playground` folder to your web server or GitHub Pages
-
-## Learn More
-
 For more information about the JSON2Cypher library, visit:
 [https://github.com/jagzmz/json-to-cypher](https://github.com/jagzmz/json-to-cypher) 
