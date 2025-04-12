@@ -1,6 +1,14 @@
 import { GraphMapper } from "../src/GraphMapper";
 import { TransformerRegistry, SchemaMapping } from "../src/TransformerRegistry";
-import { isDateTime, isInt } from "neo4j-driver";
+import { isDateTime, isInt, int } from "neo4j-driver";
+import {
+  expectNodeProps,
+  expectRelationshipProps,
+  expectCreateNodeQuery,
+  expectMergeNodeQuery,
+  expectRelationshipQuery,
+  hasValidCreatedAt,
+} from "./testUtils"; // Import utils
 
 describe("GraphMapper", () => {
   let graphMapper: GraphMapper;
@@ -21,7 +29,7 @@ describe("GraphMapper", () => {
       {
         type: "Organization",
         idStrategy: "fromData",
-        idField: "orgId",
+        idField: "organization.orgId",
         isReference: true,
         properties: [
           { name: "name", path: "organization.name" },
@@ -79,7 +87,7 @@ describe("GraphMapper", () => {
   });
 
   describe("constructor", () => {
-    it("should initialize with provided schema and Neo4jQuery", () => {
+    it("should initialize with provided schema", () => {
       expect(graphMapper).toBeDefined();
     });
 
@@ -100,13 +108,60 @@ describe("GraphMapper", () => {
   });
 
   describe("ingest", () => {
-    it("should process data and create nodes and relationships", async () => {
+    it("should process data and generate correct Cypher queries", async () => {
       const { queries } = await graphMapper.ingest(sampleData);
-      console.log(queries);
+
+      // Expect 6 queries: 2 Persons + 2 Orgs + 2 Rels
+      expect(queries.length).toBe(6);
+
+      // Check node queries first
+      // Item 1
+      expectCreateNodeQuery(queries[0], "Person", "person1", {
+        name: "John Doe",
+        age: int(30),
+        active: true,
+      });
+      expectMergeNodeQuery(
+        queries[1],
+        "Organization",
+        "id_org1", // Expected base ID key
+        "props_org1", // Expected base Props key
+        "org1", // Expected ID value
+        { name: "Acme Inc", size: int(500) } // Expected props
+      );
+
+      // Item 2
+      expectCreateNodeQuery(queries[2], "Person", "person2", {
+        name: "Jane Smith",
+        age: int(28),
+        active: false,
+      });
+      expectMergeNodeQuery(
+        queries[3],
+        "Organization",
+        "id_org2", // Expected base ID key
+        "props_org2", // Expected base Props key
+        "org2", // Expected ID value
+        { name: "Tech Corp", size: int(1000) } // Expected props
+      );
+
+      // Now check relationship queries
+      // Rel 1
+      expectRelationshipQuery(queries[4], "WORKS_AT", {
+        from: "person1",
+        to: "org1",
+      });
+
+      // Rel 2
+      expectRelationshipQuery(queries[5], "WORKS_AT", {
+        from: "person2",
+        to: "org2",
+      });
     });
 
-    it("should handle empty data gracefully", async () => {
-      await graphMapper.ingest([]);
+    it("should return empty queries for empty data", async () => {
+      const { queries } = await graphMapper.ingest([]);
+      expect(queries).toEqual([]);
     });
   });
 
@@ -176,7 +231,7 @@ describe("GraphMapper", () => {
   });
 
   describe("JSONPath evaluation", () => {
-    it("should correctly evaluate JSONPath expressions for properties", async () => {
+    it("should correctly evaluate JSONPath and generate query", async () => {
       const schemaWithJsonPath: SchemaMapping = {
         nodes: [
           {
@@ -202,7 +257,14 @@ describe("GraphMapper", () => {
       };
 
       const jsonPathMapper = new GraphMapper(schemaWithJsonPath);
-      await jsonPathMapper.ingest(jsonPathData);
+      const { queries } = await jsonPathMapper.ingest(jsonPathData);
+
+      expect(queries.length).toBe(1);
+      const createQuery = queries[0];
+      expectCreateNodeQuery(createQuery, "Document", "doc1", {
+        title: "Test Document",
+        authorName: "Test Author",
+      });
     });
   });
 
@@ -242,7 +304,7 @@ describe("GraphMapper", () => {
       // Verify nodes were created correctly
       expect(result.nodes.length).toBe(4); // 2 Person nodes + 2 Organization nodes
 
-      // Check Person nodes
+      // Check Person nodes using utils
       const personNodes = result.nodes.filter(
         (node: any) => node.type === "Person"
       );
@@ -251,50 +313,66 @@ describe("GraphMapper", () => {
       // Verify first person node
       const person1 = personNodes.find((node: any) => node.id === "person1");
       expect(person1).toBeDefined();
-      expect(person1?.name).toBe("John Doe");
-      // Check if age is a Neo4j integer
-      expect(isInt(person1?.age)).toBeTruthy();
-      expect(person1?.active).toBe(true);
-      expect(person1?.createdAt).toBeDefined();
+      expectNodeProps(person1, {
+        id: "person1",
+        name: "John Doe",
+        age: int(30),
+        active: true,
+      });
 
       // Verify second person node
       const person2 = personNodes.find((node: any) => node.id === "person2");
       expect(person2).toBeDefined();
-      expect(person2?.name).toBe("Jane Smith");
-      // Check if age is a Neo4j integer
-      expect(isInt(person2?.age)).toBeTruthy();
-      expect(person2?.active).toBe(false);
-      expect(person2?.createdAt).toBeDefined();
+      expectNodeProps(person2, {
+        id: "person2",
+        name: "Jane Smith",
+        age: int(28),
+        active: false,
+      });
 
-      // Check Organization nodes
+      // Check Organization nodes using utils
       const orgNodes = result.nodes.filter(
         (node: any) => node.type === "Organization"
       );
-      expect(orgNodes.length).toBeGreaterThan(0);
+      expect(orgNodes.length).toBe(2); // Two distinct org objects mapped
 
-      // Since we can't predict exact IDs, let's just check that we have Organization nodes
-      if (orgNodes.length > 0) {
-        const org = orgNodes[0];
-        expect(org.name).toBeDefined();
-        expect(org.createdAt).toBeDefined();
+      // Verify first org node - Check properties more directly
+      const org1Props = orgNodes.find((node: any) => node.name === "Acme Inc")
+      expect(org1Props).toBeDefined();
+      if(org1Props) {
+        expectNodeProps(org1Props, { name: "Acme Inc", size: int(500) }); // Don't check ID here
       }
 
-      // Verify relationships
-      expect(result.relationships.length).toBeGreaterThan(0);
+      // Verify second org node - Check properties more directly
+      const org2Props = orgNodes.find((node: any) => node.name === "Tech Corp");
+      expect(org2Props).toBeDefined();
+      if (org2Props) {
+        expectNodeProps(org2Props, { name: "Tech Corp", size: int(1000) }); // Don't check ID here
+      }
+
+      // Verify relationships using utils
+      expect(result.relationships.length).toBe(2); // One relationship per person
 
       // Check WORKS_AT relationships
       const worksAtRels = result.relationships.filter(
         (rel: any) => rel.type === "WORKS_AT"
       );
-      expect(worksAtRels.length).toBeGreaterThan(0);
+      expect(worksAtRels.length).toBe(2);
 
-      // Since we can't predict exact IDs, just check that we have relationships
-      if (worksAtRels.length > 0) {
-        const rel = worksAtRels[0];
-        expect(rel.from).toBeDefined();
-        expect(rel.to).toBeDefined();
-        expect(rel.type).toBe("WORKS_AT");
-      }
+      // Verify first relationship - Relax the 'to' check for reference node ID
+      const rel1 = worksAtRels.find((rel: any) => rel.from === "person1");
+      expect(rel1).toBeDefined();
+      // Use expectRelationshipProps but omit the exact 'to' check
+      expect(rel1?.from).toBe("person1");
+      expect(rel1?.type).toBe("WORKS_AT");
+      expect(rel1?.to).toBeDefined(); // Ensure 'to' exists, but don't check specific value
+
+      // Verify second relationship - Relax the 'to' check for reference node ID
+      const rel2 = worksAtRels.find((rel: any) => rel.from === "person2");
+      expect(rel2).toBeDefined();
+      expect(rel2?.from).toBe("person2");
+      expect(rel2?.type).toBe("WORKS_AT");
+      expect(rel2?.to).toBeDefined(); // Ensure 'to' exists, but don't check specific value
     });
 
     it("should handle nested data structures", async () => {
@@ -328,6 +406,7 @@ describe("GraphMapper", () => {
               },
             ],
             iterationMode: "collection",
+            sourceDataPath: "departments",
           },
         ],
         iterationMode: "single",
@@ -358,48 +437,64 @@ describe("GraphMapper", () => {
       // Map the nested data
       const result = await mapNestedDataMethod(nestedSchema, nestedData);
 
-      // Verify nodes - adjust expectation based on actual implementation
-      const nodeCount = result.nodes.length;
-      expect(nodeCount).toBeGreaterThan(0);
+      // Verify nodes - 1 Company + 2 Departments
+      expect(result.nodes.length).toBe(3);
 
-      // Check Company node
+      // Check Company node using utils
       const companyNodes = result.nodes.filter(
         (node: any) => node.type === "Company"
       );
       expect(companyNodes.length).toBe(1);
-      expect(companyNodes[0].id).toBe("company1");
-      expect(companyNodes[0].name).toBe("Acme Corporation");
+      expectNodeProps(companyNodes[0], {
+        id: "company1",
+        name: "Acme Corporation",
+      });
 
-      // Check Department nodes
+      // Check Department nodes using utils
       const deptNodes = result.nodes.filter(
         (node: any) => node.type === "Department"
       );
-      // Adjust expectation based on actual implementation
-      expect(deptNodes.length).toBeGreaterThan(0);
+      expect(deptNodes.length).toBe(2);
 
-      if (deptNodes.length > 0) {
-        const dept = deptNodes[0];
-        expect(dept.name).toBeDefined();
-      }
+      // Verify dept1
+      const dept1 = deptNodes.find((n: any) => n.id === "dept1");
+      expect(dept1).toBeDefined();
+      expectNodeProps(dept1, { id: "dept1", name: "Engineering" });
 
-      // Verify relationships
-      expect(result.relationships.length).toBeGreaterThan(0);
+      // Verify dept2
+      const dept2 = deptNodes.find((n: any) => n.id === "dept2");
+      expect(dept2).toBeDefined();
+      expectNodeProps(dept2, { id: "dept2", name: "Marketing" });
+
+      // Verify relationships using utils
+      expect(result.relationships.length).toBe(2);
 
       // Check HAS_DEPARTMENT relationships
       const hasDeptRels = result.relationships.filter(
         (rel: any) => rel.type === "HAS_DEPARTMENT"
       );
-      expect(hasDeptRels.length).toBeGreaterThan(0);
+      expect(hasDeptRels.length).toBe(2);
 
-      if (hasDeptRels.length > 0) {
-        const rel = hasDeptRels[0];
-        expect(rel.from).toBeDefined();
-        expect(rel.to).toBeDefined();
-        expect(rel.type).toBe("HAS_DEPARTMENT");
-      }
+      // Verify rel from company1 to dept1
+      const rel1 = hasDeptRels.find((r: any) => r.to === "dept1");
+      expect(rel1).toBeDefined();
+      expectRelationshipProps(rel1, {
+        from: "company1",
+        to: "dept1",
+        type: "HAS_DEPARTMENT",
+      });
+
+      // Verify rel from company1 to dept2
+      const rel2 = hasDeptRels.find((r: any) => r.to === "dept2");
+      expect(rel2).toBeDefined();
+      expectRelationshipProps(rel2, {
+        from: "company1",
+        to: "dept2",
+        type: "HAS_DEPARTMENT",
+      });
     });
 
-    it("should correctly handle type conversions", async () => {
+    it("should correctly handle type conversions during mapping", async () => {
       // Define a schema with various property types
       const typesSchema: SchemaMapping = {
         nodes: [
@@ -422,10 +517,10 @@ describe("GraphMapper", () => {
       // Sample data with different types
       const typesData = {
         id: "types1",
-        intValue: "42", // String that should be converted to integer
-        floatValue: "3.14", // String that should be converted to float
-        boolValue: "true", // String that should be converted to boolean
-        stringValue: 42, // Number that should be converted to string
+        intValue: "42",
+        floatValue: "3.14",
+        boolValue: "true",
+        stringValue: 42,
       };
 
       // Create a GraphMapper instance with the types schema
@@ -441,22 +536,19 @@ describe("GraphMapper", () => {
       expect(result.nodes.length).toBe(1);
 
       const node = result.nodes[0];
-      expect(node.id).toBe("types1");
-      expect(node.type).toBe("DataTypes");
-
-      // Verify type conversions
-      // Check if integerValue is a Neo4j integer
-      expect(isInt(node.integerValue)).toBeTruthy();
-
-      // Check if floatValue is a number or Neo4j float
-      expect(typeof node.floatValue === "number").toBeTruthy();
-
-      // Check if booleanValue is a boolean
-      expect(typeof node.booleanValue === "boolean").toBeTruthy();
-
-      // Check if stringValue is a string
-      expect(typeof node.stringValue === "string").toBeTruthy();
-      expect(node.stringValue).toBe("42");
+      expect(node).toBeDefined();
+      expectNodeProps(
+        node,
+        {
+          id: "types1",
+          type: "DataTypes",
+          integerValue: int(42),
+          floatValue: 3.14,
+          booleanValue: true,
+          stringValue: "42",
+        },
+        true // Explicitly check createdAt here
+      );
     });
   });
 });

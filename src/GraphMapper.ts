@@ -494,12 +494,25 @@ export class GraphMapper {
   }
 
   private generateNodeId(nodeDef: NodeDefinition, data: any): string {
+    const idField = nodeDef.idField || "id"; // Default to 'id'
     switch (nodeDef.idStrategy) {
       case "fixed":
-        return nodeDef.idValue || uuidv4();
+        if (!nodeDef.idValue) {
+          throw new Error(
+            `Fixed ID strategy requires an idValue for node type ${nodeDef.type}`
+          );
+        }
+        return nodeDef.idValue;
       case "fromData":
-        // Try to get ID from data, or generate a new one
-        return data[nodeDef.idField || "id"] || uuidv4();
+        // Use getNestedValue to handle potentially nested idFields
+        const idValue = this.getNestedValue(data, idField.split('.'));
+        if (idValue === null || idValue === undefined) {
+          // Throw error if ID is missing for fromData strategy
+          throw new Error(
+            `ID field '${idField}' not found in data for node type ${nodeDef.type} using 'fromData' strategy.`
+          );
+        }
+        return String(idValue); // Ensure ID is a string
       case "uuid":
       default:
         return uuidv4();
