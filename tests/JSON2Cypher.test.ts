@@ -79,11 +79,6 @@ describe("JSON2Cypher", () => {
     // Reset mocks
     jest.clearAllMocks();
 
-    // Setup mock Neo4jQuery
-    mockTransaction = {
-      run: jest.fn().mockResolvedValue({ records: [] }),
-    };
-
     // Create JSON2Cypher instance
     json2Cypher = new JSON2Cypher(sampleSchema);
   });

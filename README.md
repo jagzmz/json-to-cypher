@@ -1,6 +1,6 @@
 # JSON-to-Cypher Mapper (JSON2Cypher)
 
-![JSON2Cypher Banner](./assets/banner.png)
+[JSON2Cypher Mapper](https://github.com/jagzmz/json-to-cypher/blob/HEAD/assets/banner.png)
 
 ## Overview ✨
 
@@ -18,7 +18,7 @@
 *   **Nested Data Handling:** Recursively map complex hierarchical data structures.
 *   **Reference Nodes:** Efficiently `MERGE` common nodes (like Categories, Tags) instead of creating duplicates.
 *   **Customizable Transformations:** Extend the mapper with your own data transformation logic.
-*   **Neo4j Integration:** Designed to work with Neo4j drivers (like `neo4j-driver`) via a simple interface (e.g., `Neo4jQuery` - *you'll need to provide this*).
+*   **Neo4j Integration:** Designed to work with Neo4j drivers (like `neo4j-driver`).
 
 ## Core Concepts 🧱
 
@@ -127,8 +127,7 @@ These fields use JSONPath expressions to find the **unique ID** of the source an
 
 ```typescript
 import { JSON2Cypher } from './JSON2Cypher';
-// Assume Neo4jQuery is your class/object that handles DB connection and query execution
-// import { Neo4jQuery } from '../neo4jQuery/Neo4jQuery';
+// Assume you have a way to handle DB connection and query execution
 
 // 1. Define your Schema
 const schema: SchemaMapping = {
@@ -173,14 +172,14 @@ const usersData = [
 ];
 
 // 3. Setup Neo4j Connection (using your driver wrapper)
-// const neo4jQuery = new Neo4jQuery(/* connection details */);
+// (Connect to your Neo4j instance here)
 
 // 4. Create Mapper and Generate Queries
-// const mapper = new JSON2Cypher(schema); // Note: Neo4jQuery object is no longer needed in constructor if only generating queries
-// const { queries } = await mapper.generateQueries(usersData);
+const mapper = new JSON2Cypher(schema);
+const { queries } = await mapper.generateQueries(usersData);
 
-// console.log('Generated Queries:');
-// console.log(JSON.stringify(queries, null, 2));
+console.log('Generated Queries:');
+console.log(JSON.stringify(queries, null, 2));
 
 // Expected result: 'queries' array contains objects with Cypher strings and parameters for
 // 3 User CREATEs, 2 Company MERGEs, and 3 WORKS_AT relationships.
@@ -373,7 +372,6 @@ JSONPath can be used within transformers or for conditional relationship matchin
 
 ```typescript
 constructor(
-  neo4jQuery: Neo4jQuery, // Your Neo4j interaction object
   schema: SchemaMapping,
   transformerRegistry?: TransformerRegistry // Optional custom transformers
 )
