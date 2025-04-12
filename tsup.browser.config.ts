@@ -8,10 +8,10 @@ export default defineConfig({
   format: ['iife'],                     // Only build IIFE for browser
   globalName: 'JSON2Cypher',         // Global variable name for your bundle
   dts: false,
-  splitting: false,
+  splitting: true,
   sourcemap: false,
-  clean: true,
-  minify: false,
+  clean: false,
+  minify: true,
   treeshake: true,
   shims: true,
   keepNames: false,

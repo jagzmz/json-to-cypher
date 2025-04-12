@@ -599,7 +599,7 @@ describe("JSON2Cypher", () => {
 
   describe("Advanced Examples", () => {
     it("should handle 'Products with Categories and Tags' using uuid for Tags", async () => {
-      // Data and schema from docs/advanced-examples.js (with Tag idStrategy='uuid')
+      // Data and schema from playground/advanced-examples.js (with Tag idStrategy='uuid')
       const productsWithCategoriesData = [
         {
           productId: "prod1",
@@ -719,7 +719,7 @@ describe("JSON2Cypher", () => {
     });
 
     it("should handle 'Orders with Customers and Products' using uuid for OrderItems", async () => {
-      // Data and schema from docs/advanced-examples.js
+      // Data and schema from playground/advanced-examples.js
       const ordersData = [
         {
           "orderId": "o1",

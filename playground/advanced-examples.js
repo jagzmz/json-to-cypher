@@ -68,14 +68,14 @@ const productsWithCategoriesData = [
         name: "Smartphone",
         price: 799.99,
         category: "Electronics",
-        tags: ["mobile", "tech", "gadget"]
+        tags: ["mobile", "tech", "gadget", "appliance"]
     },
     {
         productId: "prod2",
         name: "Laptop",
         price: 1299.99,
         category: "Electronics",
-        tags: ["computer", "tech", "work"]
+        tags: ["computer", "tech", "work", "appliance"]
     },
     {
         productId: "prod3",
@@ -150,8 +150,8 @@ const ordersData = [
         email: "john@example.com",
       },
       items: [
-        { productId: "prod1", quantity: 1, price: 799.99 },
-        { productId: "prod3", quantity: 2, price: 89.99 },
+        { productId: "prod1", quantity: 1, price: 799.99, product:{ name: "Smartphone" } },
+        { productId: "prod3", quantity: 2, price: 89.99, product:{ name: "Coffee Maker" } },
       ],
       status: "completed",
     },
@@ -163,7 +163,7 @@ const ordersData = [
         name: "Jane Smith",
         email: "jane@example.com",
       },
-      items: [{ productId: "prod2", quantity: 1, price: 1299.99 }],
+      items: [{ productId: "prod2", quantity: 1, price: 1299.99, product:{ name: "Laptop" } }],
       status: "processing",
     },
   ];
@@ -227,7 +227,9 @@ const ordersSchema = {
             idStrategy: "fromData",
             idField: "productId",
             isReference: true,
-            properties: [], // No properties needed if only merging
+            properties: [
+              { name: "name", path: "product.name" },
+            ],
           },
         ],
         relationships: [

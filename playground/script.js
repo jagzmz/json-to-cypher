@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Check if JSON2Cypher is available
             if (typeof JSON2Cypher === 'undefined') {
-                showError('JSON2Cypher library not loaded. Make sure index.global.js is present in the docs folder.');
+                showError('JSON2Cypher library not loaded. Make sure index.global.js is present in the playground folder.');
                 return;
             }
             
@@ -517,17 +517,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Force resize and fit after a short delay
-        cy.ready(() => {
-            setTimeout(() => {
-                console.log("Forcing resize and fit...");
-                cy.resize(); // Force cytoscape to recalculate container size
-                // Add a check to see if nodes are actually positioned
-                if (cy.nodes().length > 0) {
-                    console.log("Node 0 position:", cy.nodes()[0].position());
-                }
-            }, 200); // Increased delay slightly
+        // Run the layout and then resize/fit
+        const layout = cy.layout({
+            name: 'cose',
+            padding: 60,
+            animate: false,
+            componentSpacing: 100,
+            nodeRepulsion: function(node) { return 600000; },
+            edgeElasticity: function(edge) { return 80; }, 
+            idealEdgeLength: function(edge) { return 120; },
+            gravity: 100,
+            fit: true
         });
+
+        layout.one('layoutstop', () => {
+            console.log("Layout stopped, resizing and fitting...");
+            cy.resize();
+            cy.fit(60); // Refit with padding after resize
+        });
+
+        layout.run();
         
         // Add event handlers for controls
         zoomInBtn.addEventListener('click', () => {

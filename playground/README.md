@@ -5,11 +5,11 @@ This is a simple web-based demo of the [JSON2Cypher](https://github.com/jagzmz/j
 ## How to Use
 
 1. Build the project: `npm run build` or `pnpm run build`
-2. The build process will automatically copy the required files to the docs folder
-3. Run the demo using: `npm run docs:deploy` or `pnpm run docs:deploy`
-4. Alternatively, you can serve the files from the docs folder using any HTTP server:
-   - Using Node.js http-server: `npx http-server docs -o`
-   - Using Python: `cd docs && python -m http.server`
+2. The build process will automatically copy the required files to the playground folder
+3. Run the demo using: `npm run playground:deploy` or `pnpm run playground:deploy`
+4. Alternatively, you can serve the files from the playground folder using any HTTP server:
+   - Using Node.js http-server: `npx http-server playground -o`
+   - Using Python: `cd playground && python -m http.server`
 
 ## Demo Features
 
@@ -29,10 +29,10 @@ To deploy this demo to GitHub Pages:
 
 1. Fork or clone this repository
 2. Make sure you've built the project (`npm run build`)
-3. Commit and push the changes, including the `docs` folder
+3. Commit and push the changes, including the `playground` folder
 4. Go to your repository settings on GitHub
 5. Under "GitHub Pages", select the source as "Deploy from a branch"
-6. Select the "main" branch and "/docs" folder
+6. Select the "main" branch and "/playground" folder
 7. Click "Save"
 8. Your site will be published at `https://[your-username].github.io/[repo-name]/`
 
@@ -40,8 +40,8 @@ To deploy this demo to GitHub Pages:
 
 If you're not using the build script, you need to:
 
-1. Make sure the `index.global.js` file is copied from the `dist` folder to the `docs` folder
-2. Deploy the entire `docs` folder to your web server or GitHub Pages
+1. Make sure the `index.global.js` file is copied from the `dist` folder to the `playground` folder
+2. Deploy the entire `playground` folder to your web server or GitHub Pages
 
 ## Learn More
 

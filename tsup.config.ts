@@ -7,7 +7,7 @@ export default defineConfig({
   dts: true, // Generate TypeScript declaration files
   splitting: false, // Prevent code splitting into chunks
   sourcemap: false, // Generate sourcemaps
-  clean: true, // Clean output directory before build
+  clean: false, // Clean output directory before build
   minify: true,
   treeshake: true,
   shims: true,

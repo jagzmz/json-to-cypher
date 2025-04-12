@@ -21,12 +21,12 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "pnpm run build:app && pnpm run build:browser && mv dist/index.global.js docs/index.global.js",
+    "build": "pnpm run build:app && pnpm run build:browser && cpx \"dist/index.global.js\" playground",
     "build:app": "tsup --tsconfig tsconfig.app.json",
     "build:browser": "tsup --config tsup.browser.config.ts",
     "prepublishOnly": "pnpm run build",
-    "docs:deploy": "npm run build:browser",
-    "docs:serve": "npm run build:browser && cd docs && npx http-server -o"
+    "playground:deploy": "npm run build:browser",
+    "playground:serve": "npm run build:browser && cd playground && npx http-server -o"
   },
   "keywords": [
     "json",

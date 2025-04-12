@@ -31,6 +31,9 @@ body {
     color: var(--text-color);
     background-color: var(--background-color);
     font-size: 15px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 a {
@@ -128,6 +131,8 @@ header p {
     padding: 1.5rem;
     max-width: 1800px;
     margin: 0 auto;
+    flex-grow: 1;
+    width: 100%;
 }
 
 .input-row {
@@ -157,7 +162,6 @@ header p {
 
 .queries-row {
     min-height: 200px;
-    max-height: 350px;
 }
 
 /* Card containers */
@@ -208,7 +212,7 @@ header p {
     background-color: var(--card-color);
     position: relative;
     overflow: hidden;
-    min-height: 400px;
+    min-height: 650px;
     display: block;
     visibility: visible;
     opacity: 1;
