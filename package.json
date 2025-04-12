@@ -24,7 +24,6 @@
     "test": "jest",
     "build": "tsup --tsconfig tsconfig.app.json",
     "prepublishOnly": "pnpm run build",
-    "publish": "npm publish",
     "postpublish": "rm *.tgz"
   },
   "keywords": [],
