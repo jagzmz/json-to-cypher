@@ -1,22 +1,19 @@
-import { JSONPath } from 'jsonpath-plus';
-import neo4j from 'neo4j-driver';
-import { v4 as uuidv4 } from 'uuid';
-import { Neo4jQuery } from '../neo4jQuery/Neo4jQuery';
-import { VariableGenerator } from '../utils/VariableGenerator';
+import { JSONPath } from "jsonpath-plus";
+import { DateTime, int } from "neo4j-driver";
+import { v4 as uuidv4 } from "uuid";
+import { VariableGenerator } from "./VariableGenerator";
 import {
   NodeDefinition,
   RelationshipDefinition,
   SchemaMapping,
-  TransformerRegistry
-} from './TransformerRegistry';
-
+  TransformerRegistry,
+} from "./TransformerRegistry";
 
 export class GraphMapper {
   private readonly variableGenerator: VariableGenerator;
   private readonly transformerRegistry: TransformerRegistry;
 
   constructor(
-    private readonly neo4jQuery: Neo4jQuery,
     private readonly schema: SchemaMapping,
     transformerRegistry?: TransformerRegistry
   ) {
@@ -28,130 +25,182 @@ export class GraphMapper {
   }
 
   private registerDefaultTransformers(): void {
-    this.transformerRegistry.register('toString', value => value?.toString() || '');
-    this.transformerRegistry.register('toNumber', value => Number(value) || 0);
-    this.transformerRegistry.register('extractText', obj => obj?.text || '');
-    this.transformerRegistry.register('extractQuestionText', value => value?.question || '');
-    this.transformerRegistry.register('extractAnswerText', value => value?.answer || '');
-    
+    this.transformerRegistry.register(
+      "toString",
+      (value) => value?.toString() || ""
+    );
+    this.transformerRegistry.register(
+      "toNumber",
+      (value) => Number(value) || 0
+    );
+    this.transformerRegistry.register("extractText", (obj) => obj?.text || "");
+    this.transformerRegistry.register(
+      "extractQuestionText",
+      (value) => value?.question || ""
+    );
+    this.transformerRegistry.register(
+      "extractAnswerText",
+      (value) => value?.answer || ""
+    );
+
     // Generic parent ID extractor that uses parameters
-    this.transformerRegistry.register('parentId', (value, context, params) => {
-      const idField = params?.idField || 'id'; // Default to 'id'
+    this.transformerRegistry.register("parentId", (value, context, params) => {
+      const idField = params?.idField || "id"; // Default to 'id'
       const parentType = params?.parentType;
-      
+
       if (!parentType) {
-        return ''; // No parent type specified
+        return ""; // No parent type specified
       }
-      
+
       // Look in current context
-      if (context.parentContext?.[`${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`]) {
-        return context.parentContext[`${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`];
+      if (
+        context.parentContext?.[
+          `${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`
+        ]
+      ) {
+        return context.parentContext[
+          `${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`
+        ];
       }
-      
+
       // Look for parent in context
       if (context.parentContext?.[parentType]?.[idField]) {
         return context.parentContext[parentType][idField];
       }
-      
+
       // Look in parent context chain
       if (context.parentContext?.parentContext) {
         // Recursively search up the context chain
-        return this.findParentIdInContext(context.parentContext.parentContext, parentType, idField);
+        return this.findParentIdInContext(
+          context.parentContext.parentContext,
+          parentType,
+          idField
+        );
       }
-      
-      return ''; // Not found
+
+      return ""; // Not found
     });
 
     // Add JSONPath transformer
-    this.transformerRegistry.register('jsonpath', (value, context, params) => {
+    this.transformerRegistry.register("jsonpath", (value, context, params) => {
       if (!params?.path) return undefined;
       return this.evaluateContextPath(params.path, { data: value, context });
     });
   }
-  
-  private findParentIdInContext(context: any, parentType: string, idField: string): string {
-    if (!context) return '';
-    
+
+  private findParentIdInContext(
+    context: any,
+    parentType: string,
+    idField: string
+  ): string {
+    if (!context) return "";
+
     // Check if this context has the parent
-    if (context[`${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`]) {
-      return context[`${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`];
+    if (
+      context[
+        `${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`
+      ]
+    ) {
+      return context[
+        `${parentType}${idField.charAt(0).toUpperCase()}${idField.slice(1)}`
+      ];
     }
-    
+
     if (context[parentType]?.[idField]) {
       return context[parentType][idField];
     }
-    
+
     // Recursively check parent context
-    return this.findParentIdInContext(context.parentContext, parentType, idField);
+    return this.findParentIdInContext(
+      context.parentContext,
+      parentType,
+      idField
+    );
   }
 
   // Add a method to evaluate context-aware JSONPath expressions
-  private evaluateContextPath(path: string, context: any, returnArray: boolean = false): any {
+  private evaluateContextPath(
+    path: string,
+    context: any,
+    returnArray: boolean = false
+  ): any {
     let result;
-    
+
     // Handle special context prefixes
-    if (path.startsWith('$current.')) {
-      result = JSONPath({ path: path.replace('$current.', '$.'), json: context.current });
-    } else if (path.startsWith('$parent.')) {
-      result = JSONPath({ path: path.replace('$parent.', '$.'), json: context.parent });
-    } else if (path.startsWith('$root.')) {
-      result = JSONPath({ path: path.replace('$root.', '$.'), json: context.root });
-    } else if (path.startsWith('$global.')) {
-      result = JSONPath({ path: path.replace('$global.', '$.'), json: context.global });
-    } else if (path.startsWith('$data.')) {
-      result = JSONPath({ path: path.replace('$data.', '$.'), json: context.data });
+    if (path.startsWith("$current.")) {
+      result = JSONPath({
+        path: path.replace("$current.", "$."),
+        json: context.current,
+      });
+    } else if (path.startsWith("$parent.")) {
+      result = JSONPath({
+        path: path.replace("$parent.", "$."),
+        json: context.parent,
+      });
+    } else if (path.startsWith("$root.")) {
+      result = JSONPath({
+        path: path.replace("$root.", "$."),
+        json: context.root,
+      });
+    } else if (path.startsWith("$global.")) {
+      result = JSONPath({
+        path: path.replace("$global.", "$."),
+        json: context.global,
+      });
+    } else if (path.startsWith("$data.")) {
+      result = JSONPath({
+        path: path.replace("$data.", "$."),
+        json: context.data,
+      });
     } else {
       // Default case - treat as regular JSONPath
       result = JSONPath({ path, json: context });
     }
-    
+
     // If the path ends with ..id or contains a filter, it's likely we want an array
-    const wantsArray = returnArray || path.endsWith('..id') || path.includes('[?(@');
-    
+    const wantsArray =
+      returnArray || path.endsWith("..id") || path.includes("[?(@");
+
     // If result is an array
     if (Array.isArray(result)) {
       // Return the array if explicitly requested or if it seems like we want an array
       if (wantsArray) {
         return result;
       }
-      
+
       // Otherwise, return the first element if it exists
       return result.length > 0 ? result[0] : undefined;
     }
-    
+
     // If not an array but we want an array, wrap it
     if (wantsArray && result !== undefined) {
       return [result];
     }
-    
+
     // Otherwise return as is
     return result;
   }
 
-  async ingest(data: any): Promise<void> {
-    const { nodes, relationships } = await this.mapDataToGraph(this.schema, data);
+  async ingest(data: any): Promise<{
+    queries: Array<{
+      query: string;
+      params: Record<string, any>;
+      isMerge?: boolean;
+    }>;
+  }> {
+    const { nodes, relationships } = await this.mapDataToGraph(
+      this.schema,
+      data
+    );
 
-    const nodeQueries = await Promise.all(nodes.map((node) => this.createNodeQuery(node)));
-    const relationshipQueries = await Promise.all(relationships.map((rel) => this.createRelationshipQuery(rel)));
+    const nodeQueries = await Promise.all(
+      nodes.map((node) => this.createNodeQuery(node))
+    );
+    const relationshipQueries = await Promise.all(
+      relationships.map((rel) => this.createRelationshipQuery(rel))
+    );
 
-    await this.neo4jQuery.withTransaction(async (session) => {
-      // Process reference nodes first (nodes using MERGE)
-      const referenceQueries = nodeQueries.filter((q) => q.isMerge);
-      for (const query of referenceQueries) {
-        await session.run(query.query, query.params);
-      }
-
-      // Then process regular nodes
-      const regularQueries = nodeQueries.filter((q) => !q.isMerge);
-      for (const query of regularQueries) {
-        await session.run(query.query, query.params);
-      }
-
-      // Finally create relationships
-      for (const query of relationshipQueries) {
-        await session.run(query.query, query.params);
-      }
-    });
+    return { queries: [...nodeQueries, ...relationshipQueries] };
   }
 
   private async mapDataToGraph(
@@ -165,36 +214,40 @@ export class GraphMapper {
   }> {
     const nodes: Array<{ id: string; type: string; [key: string]: any }> = [];
     const relationships: Array<{ from: string; to: string; type: string }> = [];
-    
+
     // Track created nodes by type for relationship creation
-    const createdNodesByType: Record<string, Array<{ id: string; index: number; properties: Record<string, any> }>> = {};
-    
+    const createdNodesByType: Record<
+      string,
+      Array<{ id: string; index: number; properties: Record<string, any> }>
+    > = {};
+
     // Get source data at the specified path
-    const sourceData = schema.sourceDataPath 
-      ? this.getNestedValue(data, schema.sourceDataPath.split('.')) 
+    const sourceData = schema.sourceDataPath
+      ? this.getNestedValue(data, schema.sourceDataPath.split("."))
       : data;
 
     if (!sourceData) return { nodes, relationships };
 
     // Handle collection vs. single entity
-    const dataItems = schema.iterationMode === 'collection' && Array.isArray(sourceData) 
-      ? sourceData 
-      : [sourceData];
+    const dataItems =
+      schema.iterationMode === "collection" && Array.isArray(sourceData)
+        ? sourceData
+        : [sourceData];
 
     // Process each data item
     for (let i = 0; i < dataItems.length; i++) {
       const item = dataItems[i];
-      
+
       // Initialize context structure for JSONPath
-      const itemContext = { 
+      const itemContext = {
         data: item,
         index: i,
         parent: parentContext.current || {},
         root: rootNodes.nodes || {},
         global: parentContext.global || {},
-        current: {} as Record<string, any>
+        current: {} as Record<string, any>,
       };
-      
+
       // Track nodes created at this level by type
       const currentLevelNodes: Record<string, string> = {};
 
@@ -207,14 +260,14 @@ export class GraphMapper {
       // Create nodes from node definitions
       for (const nodeDef of schema.nodes) {
         const nodeId = nodeIds[nodeDef.type];
-        
+
         // Store the node ID in context BEFORE extracting properties
         currentLevelNodes[nodeDef.type] = nodeId;
-        
+
         // Enhanced context with current level nodes for property extraction
         const nodeProps = this.extractNodeProperties(nodeDef, item, {
           ...itemContext,
-          nodeIds
+          nodeIds,
         });
 
         const node = {
@@ -226,32 +279,39 @@ export class GraphMapper {
         // Add node to current context for JSONPath access
         itemContext.current[nodeDef.type] = {
           id: nodeId,
-          ...nodeProps
+          ...nodeProps,
         };
 
         // Add node to nodes array if it hasn't been added yet
-        if (!nodes.some(n => n.id === nodeId)) {
+        if (!nodes.some((n) => n.id === nodeId)) {
           nodes.push(node);
         }
-        
+
         // Track this node by type for relationship creation
         if (!createdNodesByType[nodeDef.type]) {
           createdNodesByType[nodeDef.type] = [];
         }
-        
-        const existingNodeIndex = createdNodesByType[nodeDef.type].findIndex(n => n.id === nodeId);
+
+        const existingNodeIndex = createdNodesByType[nodeDef.type].findIndex(
+          (n) => n.id === nodeId
+        );
         if (existingNodeIndex === -1) {
-          createdNodesByType[nodeDef.type].push({ id: nodeId, index: i, properties: nodeProps });
+          createdNodesByType[nodeDef.type].push({
+            id: nodeId,
+            index: i,
+            properties: nodeProps,
+          });
         } else {
-          createdNodesByType[nodeDef.type][existingNodeIndex].properties = nodeProps;
+          createdNodesByType[nodeDef.type][existingNodeIndex].properties =
+            nodeProps;
         }
-        
+
         // If this is a root level node, track it globally
         if (Object.keys(parentContext).length === 0) {
           if (!rootNodes.nodes) rootNodes.nodes = {} as Record<string, any>;
           rootNodes.nodes[nodeDef.type] = {
             id: nodeId,
-            ...nodeProps
+            ...nodeProps,
           };
         }
 
@@ -262,7 +322,7 @@ export class GraphMapper {
           }
           itemContext.global[nodeDef.type].push({
             id: nodeId,
-            ...nodeProps
+            ...nodeProps,
           });
         }
       }
@@ -277,7 +337,7 @@ export class GraphMapper {
       // Process sub-mappings with enhanced context
       if (schema.subMappings) {
         for (const subMapping of schema.subMappings) {
-          const { nodes: childNodes, relationships: childRels } = 
+          const { nodes: childNodes, relationships: childRels } =
             await this.mapDataToGraph(subMapping, item, itemContext, rootNodes);
 
           nodes.push(...childNodes);
@@ -306,19 +366,26 @@ export class GraphMapper {
           relDef.from.selector,
           context
         );
-      } 
+      }
       // Handle JSONPath format
       else if (relDef.from.path) {
         // Determine if we need an array based on the relationship mapping
-        const needsArray = relDef.mapping !== 'oneToOne';
-        const result = this.evaluateContextPath(relDef.from.path, context, needsArray);
-        
+        const needsArray = relDef.mapping !== "oneToOne";
+        const result = this.evaluateContextPath(
+          relDef.from.path,
+          context,
+          needsArray
+        );
+
         if (Array.isArray(result)) {
           // Extract IDs from objects or use values directly if they're already IDs
-          fromIds = result.map(r => typeof r === 'object' && r !== null ? r.id : r).filter(id => id != null);
+          fromIds = result
+            .map((r) => (typeof r === "object" && r !== null ? r.id : r))
+            .filter((id) => id != null);
         } else if (result != null) {
           // Single value - either extract ID or use directly
-          const id = typeof result === 'object' && result !== null ? result.id : result;
+          const id =
+            typeof result === "object" && result !== null ? result.id : result;
           if (id != null) {
             fromIds = [id];
           }
@@ -332,32 +399,39 @@ export class GraphMapper {
           relDef.to.selector,
           context
         );
-      } 
+      }
       // Handle JSONPath format for target
       else if (relDef.to.path) {
         // Determine if we need an array based on the relationship mapping
-        const needsArray = relDef.mapping !== 'oneToOne';
-        const result = this.evaluateContextPath(relDef.to.path, context, needsArray);
-        
+        const needsArray = relDef.mapping !== "oneToOne";
+        const result = this.evaluateContextPath(
+          relDef.to.path,
+          context,
+          needsArray
+        );
+
         if (Array.isArray(result)) {
           // Extract IDs from objects or use values directly if they're already IDs
-          toIds = result.map(r => typeof r === 'object' && r !== null ? r.id : r).filter(id => id != null);
+          toIds = result
+            .map((r) => (typeof r === "object" && r !== null ? r.id : r))
+            .filter((id) => id != null);
         } else if (result != null) {
           // Single value - either extract ID or use directly
-          const id = typeof result === 'object' && result !== null ? result.id : result;
+          const id =
+            typeof result === "object" && result !== null ? result.id : result;
           if (id != null) {
             toIds = [id];
           }
         }
       }
-      
+
       if (fromIds.length === 0 || toIds.length === 0) {
         console.log(`No nodes found for relationship ${relDef.type}`);
         continue;
       }
-      
+
       // Handle different mapping types
-      if (relDef.mapping === 'oneToOne') {
+      if (relDef.mapping === "oneToOne") {
         // Create one-to-one relationships based on array index
         const maxLength = Math.min(fromIds.length, toIds.length);
         for (let i = 0; i < maxLength; i++) {
@@ -389,68 +463,72 @@ export class GraphMapper {
     context: any
   ): string[] {
     // Simple case: direct reference to a node at current level
-    if (selector === 'current' && context.current?.[nodeType]) {
+    if (selector === "current" && context.current?.[nodeType]) {
       return [context.current[nodeType].id];
     }
-    
+
     // Reference to parent node
-    if (selector === 'parent' && context.parent?.[nodeType]) {
+    if (selector === "parent" && context.parent?.[nodeType]) {
       return [context.parent[nodeType].id];
     }
-    
+
     // Reference to root node
-    if (selector === 'root' && context.root?.[nodeType]) {
+    if (selector === "root" && context.root?.[nodeType]) {
       return [context.root[nodeType].id];
     }
-    
+
     // Enhanced: Reference nodes by property condition
-    if (selector.includes('=')) {
-      const [propName, propValue] = selector.split('=');
-      
+    if (selector.includes("=")) {
+      const [propName, propValue] = selector.split("=");
+
       // Check in global context for reference nodes
       if (context.global?.[nodeType]) {
-        const matchingNodes = context.global[nodeType].filter((n: { [x: string]: string; }) => 
-          n[propName] === propValue
+        const matchingNodes = context.global[nodeType].filter(
+          (n: { [x: string]: string }) => n[propName] === propValue
         );
-        return matchingNodes.map((n: { id: any; }) => n.id);
+        return matchingNodes.map((n: { id: any }) => n.id);
       }
     }
-    
+
     return [];
   }
 
   private generateNodeId(nodeDef: NodeDefinition, data: any): string {
     switch (nodeDef.idStrategy) {
-      case 'fixed':
+      case "fixed":
         return nodeDef.idValue || uuidv4();
-      case 'fromData':
+      case "fromData":
         // Try to get ID from data, or generate a new one
-        return data[nodeDef.idField || 'id'] || uuidv4();
-      case 'uuid':
+        return data[nodeDef.idField || "id"] || uuidv4();
+      case "uuid":
       default:
         return uuidv4();
     }
   }
 
-  private extractNodeProperties(nodeDef: NodeDefinition, data: any, context: any): Record<string, any> {
+  private extractNodeProperties(
+    nodeDef: NodeDefinition,
+    data: any,
+    context: any
+  ): Record<string, any> {
     const result: Record<string, any> = {};
-    
+
     // Add createdAt timestamp to all nodes
-    result.createdAt = neo4j.DateTime.fromStandardDate(new Date());
-    
+    result.createdAt = DateTime.fromStandardDate(new Date());
+
     for (const propDef of nodeDef.properties) {
       let value;
-      
+
       // If propDef.path is provided and starts with $, treat as JSONPath
-      if (propDef.path && propDef.path.startsWith('$')) {
+      if (propDef.path && propDef.path.startsWith("$")) {
         // For properties, we typically want a single value, not an array
         value = this.evaluateContextPath(propDef.path, context, false);
       }
       // Otherwise get value from data using dot notation
       else if (propDef.path) {
-        value = this.getNestedValue(data, propDef.path.split('.'));
+        value = this.getNestedValue(data, propDef.path.split("."));
       }
-      
+
       // Apply transformer if specified
       if (propDef.transformerId) {
         const transformer = this.transformerRegistry.get(propDef.transformerId);
@@ -458,20 +536,20 @@ export class GraphMapper {
           value = transformer(value, context, propDef.transformerParams);
         }
       }
-      
+
       // Use default if value is undefined
       if (value === undefined && propDef.default !== undefined) {
         value = propDef.default;
       }
-      
+
       // Apply type conversion if specified
       if (propDef.type) {
         value = this.convertValueToType(value, propDef.type);
       }
-      
+
       result[propDef.name] = value;
     }
-    
+
     return result;
   }
 
@@ -479,21 +557,21 @@ export class GraphMapper {
     if (value === null || value === undefined) {
       return value;
     }
-    
+
     switch (type.toLowerCase()) {
-      case 'integer':
-      case 'int':
+      case "integer":
+      case "int":
         // return Number.isFinite(value) ? Math.floor(value) : parseInt(value, 10);
-        return neo4j.int(value);
-      case 'float':
-      case 'double':
+        return int(value);
+      case "float":
+      case "double":
         return Number.isFinite(value) ? value : parseFloat(value);
-      case 'boolean':
-      case 'bool':
+      case "boolean":
+      case "bool":
         return Boolean(value);
-      case 'string':
+      case "string":
         return String(value);
-      case 'date':
+      case "date":
         return new Date(value);
       default:
         return value;
@@ -501,17 +579,25 @@ export class GraphMapper {
   }
 
   private getNestedValue(obj: any, path: string[]): any {
-    return path.reduce((prev, curr) => (prev && prev[curr] !== undefined ? prev[curr] : undefined), obj);
+    return path.reduce(
+      (prev, curr) =>
+        prev && prev[curr] !== undefined ? prev[curr] : undefined,
+      obj
+    );
   }
 
-  private async createNodeQuery(node: { id: string; type: string; [key: string]: any }) {
+  private async createNodeQuery(node: {
+    id: string;
+    type: string;
+    [key: string]: any;
+  }) {
     const { id, type, ...properties } = node;
     const varName = this.variableGenerator.getNext();
 
     // Determine if this is a reference node (using MERGE)
     const nodeDefinition = this.findNodeDefinition(type);
     const isMerge = nodeDefinition?.isReference === true;
-    const operation = isMerge ? 'MERGE' : 'CREATE';
+    const operation = isMerge ? "MERGE" : "CREATE";
 
     const query = `
       ${operation} (${varName}:${type} {id: $id_${varName}}) 
@@ -527,7 +613,9 @@ export class GraphMapper {
   }
 
   private findNodeDefinition(type: string): NodeDefinition | undefined {
-    const findInMapping = (mapping: SchemaMapping): NodeDefinition | undefined => {
+    const findInMapping = (
+      mapping: SchemaMapping
+    ): NodeDefinition | undefined => {
       const direct = mapping.nodes.find((n) => n.type === type);
       if (direct) return direct;
 
@@ -544,7 +632,11 @@ export class GraphMapper {
     return findInMapping(this.schema);
   }
 
-  private async createRelationshipQuery(relationship: { from: string; to: string; type: string }) {
+  private async createRelationshipQuery(relationship: {
+    from: string;
+    to: string;
+    type: string;
+  }) {
     const { from, to, type } = relationship;
     const relVar = this.variableGenerator.getNext();
 
@@ -566,8 +658,11 @@ export class GraphMapper {
     return JSON.stringify(this.schema);
   }
 
-  static fromSerialized(neo4jQuery: Neo4jQuery, serializedSchema: string, transformerRegistry?: TransformerRegistry): GraphMapper {
+  static fromSerialized(
+    serializedSchema: string,
+    transformerRegistry?: TransformerRegistry
+  ): GraphMapper {
     const schema = JSON.parse(serializedSchema) as SchemaMapping;
-    return new GraphMapper(neo4jQuery, schema, transformerRegistry);
+    return new GraphMapper(schema, transformerRegistry);
   }
 }
