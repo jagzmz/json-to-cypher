@@ -214,6 +214,96 @@ const orderSchema = {
 };
 ```
 
+#### Example: Mapping Posts and Comments
+
+Let's map blog posts, each containing an array of comments. We want `Post` nodes and `Comment` nodes, with a `HAS_COMMENT` relationship from each Post to its Comments.
+
+**Schema Definition (`SchemaMapping`)**
+
+```typescript
+const postCommentSchema: SchemaMapping = {
+  // Top-level processes each post in the input array
+  iterationMode: 'collection',
+  nodes: [
+    {
+      type: 'Post',
+      idStrategy: 'fromData',
+      idField: 'postId',
+      properties: [
+        { name: 'title', path: 'title' },
+        { name: 'content', path: 'body' }
+      ]
+    }
+  ],
+  relationships: [], // No relationships defined at the top level
+  subMappings: [
+    {
+      // For each post, process its 'comments' array
+      sourceDataPath: 'comments',
+      iterationMode: 'collection',
+      nodes: [
+        {
+          type: 'Comment',
+          idStrategy: 'fromData',
+          idField: 'commentId',
+          properties: [
+            { name: 'text', path: 'commentText' },
+            { name: 'author', path: 'user' }
+          ]
+        }
+      ],
+      relationships: [
+        {
+          // Link the current Comment back to its parent Post
+          type: 'HAS_COMMENT',
+          from: { path: '$parent.Post.id' }, // Use $parent context
+          to: { path: '$current.Comment.id' } // Use $current context
+        }
+      ]
+    }
+  ]
+};
+```
+
+**Input Data**
+
+```json
+[
+  {
+    "postId": "p1",
+    "title": "Intro to Graphs",
+    "body": "Graphs are cool...",
+    "comments": [
+      { "commentId": "c1", "commentText": "Great post!", "user": "Alice" },
+      { "commentId": "c2", "commentText": "Very informative.", "user": "Bob" }
+    ]
+  },
+  {
+    "postId": "p2",
+    "title": "Deep Dive into Cypher",
+    "body": "Let's look at MATCH...",
+    "comments": [
+      { "commentId": "c3", "commentText": "Needs more examples.", "user": "Charlie" }
+    ]
+  }
+]
+```
+
+**Generated Queries (Conceptual Output)**
+
+Running `mapper.generateQueries(inputData)` with the `postCommentSchema` would produce an array of query objects conceptually similar to this (variable names and exact parameters will differ):
+
+1.  `CREATE (p:Post {id: 'p1'}) SET p += {title: 'Intro to Graphs', content: 'Graphs are cool...', createdAt: ...}`
+2.  `CREATE (c:Comment {id: 'c1'}) SET c += {text: 'Great post!', author: 'Alice', createdAt: ...}`
+3.  `MATCH (source) WHERE source.id = 'p1' MATCH (target) WHERE target.id = 'c1' CREATE (source)-[:HAS_COMMENT]->(target)`
+4.  `CREATE (c:Comment {id: 'c2'}) SET c += {text: 'Very informative.', author: 'Bob', createdAt: ...}`
+5.  `MATCH (source) WHERE source.id = 'p1' MATCH (target) WHERE target.id = 'c2' CREATE (source)-[:HAS_COMMENT]->(target)`
+6.  `CREATE (p:Post {id: 'p2'}) SET p += {title: 'Deep Dive into Cypher', content: 'Let\'s look at MATCH...', createdAt: ...}`
+7.  `CREATE (c:Comment {id: 'c3'}) SET c += {text: 'Needs more examples.', author: 'Charlie', createdAt: ...}`
+8.  `MATCH (source) WHERE source.id = 'p2' MATCH (target) WHERE target.id = 'c3' CREATE (source)-[:HAS_COMMENT]->(target)`
+
+This demonstrates how `subMappings` combined with `sourceDataPath` and the `$parent`/`$current` contexts enable mapping of nested structures and relationships.
+
 ### Custom Value Transformers
 
 Register functions to transform data before it's set as a property.
