@@ -248,7 +248,7 @@ const postCommentSchema: SchemaMapping = {
           idStrategy: 'fromData',
           idField: 'commentId',
           properties: [
-            { name: 'text', path: 'commentText' },
+            { name: 'name', path: 'commentText' },
             { name: 'author', path: 'user' }
           ]
         }

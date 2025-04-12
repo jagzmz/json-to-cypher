@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
     const cypherOutput = document.getElementById('cypher-output');
     const graphVis = document.getElementById('graph-vis');
+    const graphVisContainer = document.getElementById('graph-vis-container');
     const queriesHeading = document.getElementById('queries-heading');
     const generateBtn = document.getElementById('generate-queries');
     const loadSampleDataBtn = document.getElementById('load-sample-data');
@@ -173,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Scroll to the graph visualization after a short delay
             setTimeout(() => {
-                graphVis.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                graphVisContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100); // 100ms delay
             
         } catch (error) {
