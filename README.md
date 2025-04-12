@@ -1,5 +1,7 @@
 # JSON-to-Cypher Mapper (GraphMapper)
 
+![GraphMapper Banner](./assets/banner.png)
+
 ## Overview ✨
 
 `GraphMapper` is a TypeScript utility designed to transform your JSON data into Cypher queries suitable for Neo4j. Define a mapping schema once, and GraphMapper generates the `CREATE` and `MERGE` statements for nodes and relationships based on your data structures.
