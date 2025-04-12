@@ -1,14 +1,15 @@
-# GraphMapper: Map Your Data to Neo4j Effortlessly 🕸️
+# JSON-to-Cypher Mapper (GraphMapper) 🕸️
 
 ## Overview ✨
 
-GraphMapper is a TypeScript utility designed to simplify the process of transforming your structured data (like JSON objects or arrays) into a Neo4j graph. Define a mapping schema once, and GraphMapper handles the conversion of your data into nodes and relationships, including nested structures, property type conversions, and custom transformations.
+`GraphMapper` is a TypeScript utility designed to transform your JSON data into Cypher queries suitable for Neo4j. Define a mapping schema once, and GraphMapper generates the `CREATE` and `MERGE` statements for nodes and relationships based on your data structures.
 
-**Think of it as a bridge:** It takes your application data on one side and translates it into the nodes and relationships that form your Neo4j graph on the other.
+**Think of it as a JSON-to-Cypher translator:** It takes your JSON data and schema definition, and outputs the Cypher queries needed to represent that data in a Neo4j graph.
 
 ## Key Features ✅
 
-*   **Declarative Schema:** Define your graph structure (nodes, properties, relationships) in a clear configuration object.
+*   **Declarative Schema:** Define your target graph structure (nodes, properties, relationships) in a configuration object.
+*   **JSON-to-Cypher Generation:** Outputs an array of Cypher query strings and parameter objects.
 *   **Flexible Node Identification:** Choose how nodes are identified (UUIDs, data fields, fixed IDs).
 *   **Powerful Property Mapping:** Use JSONPath to extract data precisely, convert types, and set defaults.
 *   **Relationship Context:** Easily create relationships between nodes created at different levels of your data (e.g., parent-child).
@@ -172,15 +173,19 @@ const usersData = [
 // 3. Setup Neo4j Connection (using your driver wrapper)
 // const neo4jQuery = new Neo4jQuery(/* connection details */);
 
-// 4. Create Mapper and Ingest Data
-// const mapper = new GraphMapper(neo4jQuery, schema);
-// await mapper.ingest(usersData);
+// 4. Create Mapper and Generate Queries
+// const mapper = new GraphMapper(schema); // Note: Neo4jQuery object is no longer needed in constructor if only generating queries
+// const { queries } = await mapper.generateQueries(usersData);
 
-// console.log('Data ingestion complete!');
-// Expected result: 3 User nodes created, 2 Company nodes merged (c1 is reused), 3 WORKS_AT relationships created.
+// console.log('Generated Queries:');
+// console.log(JSON.stringify(queries, null, 2));
+
+// Expected result: 'queries' array contains objects with Cypher strings and parameters for
+// 3 User CREATEs, 2 Company MERGEs, and 3 WORKS_AT relationships.
+// You would then execute these queries using your Neo4j driver.
 ```
 
-*Note: You need to provide an object (`neo4jQuery` in the example) that the `GraphMapper` can use to execute Cypher queries. This object should have methods compatible with the interactions needed (e.g., running transactions, executing queries with parameters).*
+*Note: The primary output of `generateQueries` is an array of objects, each containing a `query` string and a `params` object. You are responsible for executing these queries against your Neo4j database using a driver.*
 
 ## Advanced Features 🧠🛠️
 
@@ -267,9 +272,9 @@ constructor(
 
 ### Methods
 
-*   `async ingest(data: any): Promise<void>`: Processes the data according to the schema and executes Cypher queries via `neo4jQuery`.
+*   `async generateQueries(data: any): Promise<{ queries: Array<{ query: string; params: Record<string, any>; isMerge?: boolean; }> }>`: Processes the data according to the schema and returns an array of Cypher query objects (query string and parameters).
 *   `serializeSchema(): string`: Returns the schema as a JSON string.
-*   `static fromSerialized(neo4jQuery: Neo4jQuery, serializedSchema: string, transformerRegistry?: TransformerRegistry): GraphMapper`: Creates a mapper instance from a serialized schema string.
+*   `static fromSerialized(serializedSchema: string, transformerRegistry?: TransformerRegistry): GraphMapper`: Creates a mapper instance from a serialized schema string.
 
 ## Dive Deeper: Examples in Tests 🔍🎯
 
@@ -290,7 +295,7 @@ constructor(
 4.  **Use JSONPath Contexts:** Understand `$current`, `$parent`, `$global` for robust relationship mapping.
 5.  **Leverage Reference Nodes:** Avoid data duplication for common entities (Tags, Categories, Statuses).
 6.  **Test Thoroughly:** Validate mappings with diverse data, especially edge cases and nested structures.
-7.  **Error Handling:** The `ingest` process might throw errors (database issues, potentially mapping issues if data is invalid). Implement appropriate try/catch blocks in your application code.
+7.  **Error Handling:** The `generateQueries` process primarily focuses on mapping. Errors during query *execution* (database connectivity, constraints) need to be handled separately when you run the generated Cypher.
 
 ## Internal Details ⚙️
 

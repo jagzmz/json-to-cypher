@@ -181,7 +181,7 @@ export class GraphMapper {
     return result;
   }
 
-  async ingest(data: any): Promise<{
+  async generateQueries(data: any): Promise<{
     queries: Array<{
       query: string;
       params: Record<string, any>;

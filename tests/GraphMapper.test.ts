@@ -107,9 +107,9 @@ describe("GraphMapper", () => {
     });
   });
 
-  describe("ingest", () => {
+  describe("generateQueries", () => {
     it("should process data and generate correct Cypher queries", async () => {
-      const { queries } = await graphMapper.ingest(sampleData);
+      const { queries } = await graphMapper.generateQueries(sampleData);
 
       // Expect 6 queries: 2 Persons + 2 Orgs + 2 Rels
       expect(queries.length).toBe(6);
@@ -160,7 +160,7 @@ describe("GraphMapper", () => {
     });
 
     it("should return empty queries for empty data", async () => {
-      const { queries } = await graphMapper.ingest([]);
+      const { queries } = await graphMapper.generateQueries([]);
       expect(queries).toEqual([]);
     });
   });
@@ -181,7 +181,7 @@ describe("GraphMapper", () => {
         },
       ];
 
-      await graphMapper.ingest(testData);
+      await graphMapper.generateQueries(testData);
 
       // We can't easily check the specific parameters without knowing the exact implementation
       // So we'll just verify the test runs without errors
@@ -202,13 +202,13 @@ describe("GraphMapper", () => {
         },
       ];
 
-      await graphMapper.ingest(testData);
+      await graphMapper.generateQueries(testData);
     });
   });
 
   describe("createdAt timestamp", () => {
     it("should add createdAt timestamp to all nodes", async () => {
-      const { queries } = await graphMapper.ingest(sampleData);
+      const { queries } = await graphMapper.generateQueries(sampleData);
 
       const nodeCalls = queries.filter(
         (query) =>
@@ -257,7 +257,7 @@ describe("GraphMapper", () => {
       };
 
       const jsonPathMapper = new GraphMapper(schemaWithJsonPath);
-      const { queries } = await jsonPathMapper.ingest(jsonPathData);
+      const { queries } = await jsonPathMapper.generateQueries(jsonPathData);
 
       expect(queries.length).toBe(1);
       const createQuery = queries[0];
