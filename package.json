@@ -1,6 +1,6 @@
 {
   "name": "@jagzmz/json-to-cypher",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Convert JSON to Cypher queries",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -15,6 +15,7 @@
     }
   },
   "files": [
+    "assets",
     "dist",
     "README.md",
     "package.json"
@@ -38,7 +39,12 @@
   },
   "dependencies": {
     "jsonpath-plus": "^10.3.0",
-    "neo4j-driver": "^5.28.1",
     "uuid": "^11.1.0"
+  },
+  "peerDependencies": {
+    "neo4j-driver": "^5.28.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
