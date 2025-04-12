@@ -293,14 +293,31 @@ const postCommentSchema: SchemaMapping = {
 
 Running `mapper.generateQueries(inputData)` with the `postCommentSchema` would produce an array of query objects conceptually similar to this (variable names and exact parameters will differ):
 
-1.  `CREATE (p:Post {id: 'p1'}) SET p += {title: 'Intro to Graphs', content: 'Graphs are cool...', createdAt: ...}`
-2.  `CREATE (c:Comment {id: 'c1'}) SET c += {text: 'Great post!', author: 'Alice', createdAt: ...}`
-3.  `MATCH (source) WHERE source.id = 'p1' MATCH (target) WHERE target.id = 'c1' CREATE (source)-[:HAS_COMMENT]->(target)`
-4.  `CREATE (c:Comment {id: 'c2'}) SET c += {text: 'Very informative.', author: 'Bob', createdAt: ...}`
-5.  `MATCH (source) WHERE source.id = 'p1' MATCH (target) WHERE target.id = 'c2' CREATE (source)-[:HAS_COMMENT]->(target)`
-6.  `CREATE (p:Post {id: 'p2'}) SET p += {title: 'Deep Dive into Cypher', content: 'Let\'s look at MATCH...', createdAt: ...}`
-7.  `CREATE (c:Comment {id: 'c3'}) SET c += {text: 'Needs more examples.', author: 'Charlie', createdAt: ...}`
-8.  `MATCH (source) WHERE source.id = 'p2' MATCH (target) WHERE target.id = 'c3' CREATE (source)-[:HAS_COMMENT]->(target)`
+```cypher
+// 1. Create Post p1
+CREATE (p:Post {id: 'p1'}) SET p += {title: 'Intro to Graphs', content: 'Graphs are cool...', createdAt: ...}
+
+// 2. Create Comment c1 for Post p1
+CREATE (c:Comment {id: 'c1'}) SET c += {text: 'Great post!', author: 'Alice', createdAt: ...}
+
+// 3. Create Relationship p1 -> c1
+MATCH (source) WHERE source.id = 'p1' MATCH (target) WHERE target.id = 'c1' CREATE (source)-[:HAS_COMMENT]->(target)
+
+// 4. Create Comment c2 for Post p1
+CREATE (c:Comment {id: 'c2'}) SET c += {text: 'Very informative.', author: 'Bob', createdAt: ...}
+
+// 5. Create Relationship p1 -> c2
+MATCH (source) WHERE source.id = 'p1' MATCH (target) WHERE target.id = 'c2' CREATE (source)-[:HAS_COMMENT]->(target)
+
+// 6. Create Post p2
+CREATE (p:Post {id: 'p2'}) SET p += {title: 'Deep Dive into Cypher', content: 'Let\'s look at MATCH...', createdAt: ...}
+
+// 7. Create Comment c3 for Post p2
+CREATE (c:Comment {id: 'c3'}) SET c += {text: 'Needs more examples.', author: 'Charlie', createdAt: ...}
+
+// 8. Create Relationship p2 -> c3
+MATCH (source) WHERE source.id = 'p2' MATCH (target) WHERE target.id = 'c3' CREATE (source)-[:HAS_COMMENT]->(target)
+```
 
 This demonstrates how `subMappings` combined with `sourceDataPath` and the `$parent`/`$current` contexts enable mapping of nested structures and relationships.
 
