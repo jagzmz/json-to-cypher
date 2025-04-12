@@ -1,6 +1,6 @@
 # JSON-to-Cypher Mapper (JSON2Cypher)
 
-[JSON2Cypher Mapper](https://github.com/jagzmz/json-to-cypher/blob/HEAD/assets/banner.png)
+![JSON2Cypher Banner](https://github.com/jagzmz/json-to-cypher/blob/HEAD/assets/banner.png)
 
 ## Overview ✨
 
