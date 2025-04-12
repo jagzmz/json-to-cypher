@@ -1,14 +1,12 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "./tsconfig.app.json",
   "compilerOptions": {
     // No specific rootDir or outDir needed for tests usually
     // Add specific options for tests if needed, e.g., types: ["jest", "node"]
     // "types": ["jest", "node"]
     "rootDir": "./tests",
+    "composite": true
   },
   "include": ["tests/**/*"], // Include both src and tests
   "exclude": ["node_modules", "dist"],
-  "references": [
-    { "path": "./tsconfig.app.json" }
-  ]
 } 

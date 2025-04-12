@@ -1,315 +1,300 @@
-# GraphMapper Documentation
+# GraphMapper: Map Your Data to Neo4j Effortlessly 🕸️
 
-## Overview
+## Overview ✨
 
-The `GraphMapper` is a flexible utility for mapping structured data to a Neo4j graph database. It transforms object-based data into nodes and relationships according to a configurable schema definition, handling complex nested data structures, property transformations, and relationship mappings.
+GraphMapper is a TypeScript utility designed to simplify the process of transforming your structured data (like JSON objects or arrays) into a Neo4j graph. Define a mapping schema once, and GraphMapper handles the conversion of your data into nodes and relationships, including nested structures, property type conversions, and custom transformations.
 
-## Key Features
+**Think of it as a bridge:** It takes your application data on one side and translates it into the nodes and relationships that form your Neo4j graph on the other.
 
-- **Declarative schema definition** for mapping data to graph elements
-- **Support for nested data structures** with recursive mapping
-- **JSONPath expressions** for powerful property and relationship mapping
-- **Property type conversion** to appropriate Neo4j types
-- **Custom value transformation** with an extensible transformer registry
-- **Reference node support** with different node creation strategies
-- **Configurable relationship mappings** (one-to-one, many-to-many)
+## Key Features ✅
 
-## Schema Configuration
+*   **Declarative Schema:** Define your graph structure (nodes, properties, relationships) in a clear configuration object.
+*   **Flexible Node Identification:** Choose how nodes are identified (UUIDs, data fields, fixed IDs).
+*   **Powerful Property Mapping:** Use JSONPath to extract data precisely, convert types, and set defaults.
+*   **Relationship Context:** Easily create relationships between nodes created at different levels of your data (e.g., parent-child).
+*   **Nested Data Handling:** Recursively map complex hierarchical data structures.
+*   **Reference Nodes:** Efficiently `MERGE` common nodes (like Categories, Tags) instead of creating duplicates.
+*   **Customizable Transformations:** Extend the mapper with your own data transformation logic.
+*   **Neo4j Integration:** Designed to work with Neo4j drivers (like `neo4j-driver`) via a simple interface (e.g., `Neo4jQuery` - *you'll need to provide this*).
 
-The schema defines how data should be mapped to the graph database. It consists of:
+## Core Concepts 🧱
 
-### SchemaMapping Structure
+### 1. The Schema (`SchemaMapping`)
+
+The heart of GraphMapper is the schema. It tells the mapper how to interpret your source data.
 
 ```typescript
 interface SchemaMapping {
-  nodes: NodeDefinition[];          // Node definitions
-  relationships: RelationshipDefinition[]; // Relationship definitions
-  sourceDataPath?: string;          // Optional path to data within the source object
-  iterationMode?: 'single' | 'collection'; // How to process the data
-  subMappings?: SchemaMapping[];    // Nested mappings for hierarchical data
+  nodes: NodeDefinition[];          // How to create nodes from data
+  relationships: RelationshipDefinition[]; // How to create relationships between nodes
+  sourceDataPath?: string;          // Optional JSONPath to locate the data within a larger object
+  iterationMode?: 'single' | 'collection'; // Process data as one item or an array
+  subMappings?: SchemaMapping[];    // Define rules for nested data
 }
 ```
 
-### Node Definition
+### 2. Defining Nodes (`NodeDefinition`)
+
+Each `NodeDefinition` specifies how to create nodes of a certain type (label) in Neo4j.
 
 ```typescript
 interface NodeDefinition {
-  type: string;                     // Neo4j node label
-  idStrategy: 'uuid' | 'fromData' | 'fixed'; // How to generate node IDs
-  idField?: string;                 // Field containing ID (for 'fromData' strategy)
-  idValue?: string;                 // Fixed ID value (for 'fixed' strategy)
-  isReference?: boolean;            // Whether to use MERGE instead of CREATE
-  properties: PropertyDefinition[]; // Properties to set on the node
+  type: string;                     // Neo4j node label (e.g., 'User', 'Product')
+  idStrategy: 'uuid' | 'fromData' | 'fixed'; // How to determine the node's unique ID
+  idField?: string;                 // Required if idStrategy is 'fromData'
+  idValue?: string;                 // Required if idStrategy is 'fixed'
+  isReference?: boolean;            // Use MERGE instead of CREATE (default: false)
+  properties: PropertyDefinition[]; // Map data fields to node properties
 }
 ```
 
-### Property Definition
+**Node Identification (`idStrategy`)**
+
+This is crucial for how GraphMapper finds or creates nodes:
+
+*   `'uuid'`: **Use Case:** When your source data doesn't have a natural unique ID, or you want guaranteed unique graph IDs.
+    *   GraphMapper generates a unique UUID for each node.
+    *   Example: `{ type: 'LogEntry', idStrategy: 'uuid', properties: [...] }`
+*   `'fromData'`: **Use Case:** Your source data already contains a unique identifier for this entity.
+    *   Requires `idField`: A JSONPath expression pointing to the ID field in your source data (e.g., `'userId'`, `'productSKU'`).
+    *   Example: `{ type: 'User', idStrategy: 'fromData', idField: 'userId', properties: [...] }`
+*   `'fixed'`: **Use Case:** For creating predefined, singleton-like nodes (often reference nodes).
+    *   Requires `idValue`: The fixed string ID this node will always have.
+    *   Example: `{ type: 'Status', idStrategy: 'fixed', idValue: 'status-active', isReference: true, properties: [{ name: 'name', default: 'Active' }] }`
+
+**Reference Nodes (`isReference: true`)**
+
+*   When `isReference` is true, GraphMapper uses `MERGE` in Cypher instead of `CREATE`.
+*   This is ideal for nodes that represent shared concepts (like categories, tags, statuses) where you want to connect to the *same* node instance if it already exists, rather than creating duplicates. Use with `'fixed'` or `'fromData'` if the reference data has a stable ID.
+
+### 3. Defining Properties (`PropertyDefinition`)
+
+Specifies how to map fields from your source data to properties on a Neo4j node.
 
 ```typescript
 interface PropertyDefinition {
-  name: string;                     // Neo4j property name
-  path?: string;                    // Path to value in source data
-  type?: string;                    // Data type (integer, float, boolean, string, date)
-  default?: any;                    // Default value if not found
-  transformerId?: string;           // ID of transformer to apply
-  transformerParams?: any;          // Parameters for transformer
+  name: string;                     // Neo4j property name (e.g., 'userName', 'price')
+  path?: string;                    // JSONPath to the value in the source data (e.g., 'user.name', 'details.price')
+  type?: string;                    // Convert value: 'integer', 'float', 'boolean', 'string', 'date'
+  default?: any;                    // Value to use if 'path' finds nothing
+  transformerId?: string;           // Apply a registered custom transformer
+  transformerParams?: any;          // Optional parameters for the transformer
 }
 ```
 
-### Relationship Definition
+### 4. Defining Relationships (`RelationshipDefinition`)
+
+This defines how to create relationships between the nodes generated by the mapper.
 
 ```typescript
 interface RelationshipDefinition {
-  type: string;                     // Neo4j relationship type
-  from: {                           // Source node reference
-    path: string;                   // JSONPath to node ID
-    // Legacy format:
-    nodeType?: string;              // Node type for lookup
-    selector?: string;              // 'current', 'parent', 'root', or property condition
-  };
-  to: {                             // Target node reference
-    path: string;                   // JSONPath to node ID
-    // Legacy format:
-    nodeType?: string;              // Node type for lookup
-    selector?: string;              // 'current', 'parent', 'root', or property condition
-  };
-  mapping?: 'oneToOne' | 'manyToMany'; // Relationship cardinality
+  type: string;                     // Neo4j relationship type (e.g., 'WORKS_AT', 'HAS_TAG')
+  from: { path: string; /* ... */ }; // Source node reference
+  to: { path: string; /* ... */ };   // Target node reference
+  mapping?: 'oneToOne' | 'manyToMany'; // Cardinality hint (default: manyToMany)
 }
 ```
 
-## Context in JSONPath Expressions
+**The Power of `from.path` and `to.path`**
 
-The GraphMapper supports special context prefixes in JSONPath expressions to access different scopes:
+These fields use JSONPath expressions to find the **unique ID** of the source and target nodes for the relationship. This is where context variables become essential:
 
-- `$data` - References the current data item
-- `$current` - References nodes created at the current level
-- `$parent` - References nodes from the parent context
-- `$root` - References nodes from the root level
-- `$global` - References to reference nodes across all contexts
+*   `$data`: References the **current piece of data** being processed in an iteration.
+    *   Example: `path: '$data.userId'` (if the relationship target ID is directly in the current data item).
+*   `$current`: References **nodes created at the current mapping level**. Access nodes by type and ID.
+    *   Example: `path: '$current.User.id'` (references the ID of the 'User' node created from the current data item).
+*   `$parent`: References **nodes created by the parent mapping level** (used in `subMappings`).
+    *   Example: `path: '$parent.Order.id'` (in an 'OrderItem' subMapping, connects back to the parent 'Order' node).
+*   `$root`: References **nodes created at the top-level mapping**.
+*   `$global`: References **nodes created across all contexts**, especially useful for connecting to globally defined reference nodes.
+    *   Example: `path: '$global.Category[?(@.name=="Electronics")].id'` (finds a 'Category' reference node by property).
 
-## Usage Example
+**Example: Parent-Child Relationship**
+
+```typescript
+// In a subMapping for 'comments' under a 'Post'
+{
+  type: 'HAS_COMMENT',
+  from: { path: '$parent.Post.id' }, // ID of the Post node from the level above
+  to: { path: '$current.Comment.id' } // ID of the Comment node created here
+}
+```
+
+## Getting Started 🚀
 
 ```typescript
 import { GraphMapper } from './GraphMapper';
-import { Neo4jQuery } from '../neo4jQuery/Neo4jQuery';
+// Assume Neo4jQuery is your class/object that handles DB connection and query execution
+// import { Neo4jQuery } from '../neo4jQuery/Neo4jQuery';
 
-// Create schema definition
-const schema = {
+// 1. Define your Schema
+const schema: SchemaMapping = {
   nodes: [
     {
-      type: 'Person',
+      type: 'User',
       idStrategy: 'fromData',
-      idField: 'id',
+      idField: 'id', // Use the 'id' field from data as the unique ID
       properties: [
-        { name: 'name', path: 'name' },
-        { name: 'age', path: 'age', type: 'integer' }
+        { name: 'name', path: 'name' }, // Map data 'name' to node property 'name'
+        { name: 'email', path: 'email' },
+        { name: 'signupDate', path: 'createdAt', type: 'date' } // Convert string/number to Neo4j Date
       ]
     },
     {
-      type: 'Organization',
+      type: 'Company',
       idStrategy: 'fromData',
-      idField: 'orgId',
+      idField: 'company.id', // ID is nested in data
+      isReference: true, // Use MERGE for Company nodes
       properties: [
-        { name: 'name', path: 'organization.name' }
+        { name: 'name', path: 'company.name' }
       ]
     }
   ],
   relationships: [
     {
       type: 'WORKS_AT',
-      from: { path: '$current.Person.id' },
-      to: { path: '$current.Organization.id' }
+      // Connect the User node created in this context...
+      from: { path: '$current.User.id' },
+      // ...to the Company node created in this context (or merged if existing)
+      to: { path: '$current.Company.id' }
     }
   ],
-  iterationMode: 'collection'
+  iterationMode: 'collection' // Expect an array of user data
 };
 
-// Sample data
-const data = [
-  {
-    id: 'person1',
-    name: 'John Doe',
-    age: 30,
-    organization: {
-      orgId: 'org1',
-      name: 'Acme Inc'
-    }
-  }
+// 2. Prepare your Data
+const usersData = [
+  { id: 'u1', name: 'Alice', email: 'alice@example.com', createdAt: '2023-01-10', company: { id: 'c1', name: 'Innovate Inc.' } },
+  { id: 'u2', name: 'Bob', email: 'bob@example.com', createdAt: '2023-02-15', company: { id: 'c2', name: 'Synergy Corp.' } },
+  { id: 'u3', name: 'Charlie', email: 'charlie@example.com', createdAt: '2023-03-20', company: { id: 'c1', name: 'Innovate Inc.' } } // Works at the same company as Alice
 ];
 
-// Create Neo4jQuery instance (connection to database)
-const neo4jQuery = new Neo4jQuery(/* connection details */);
+// 3. Setup Neo4j Connection (using your driver wrapper)
+// const neo4jQuery = new Neo4jQuery(/* connection details */);
 
-// Create mapper instance
-const mapper = new GraphMapper(neo4jQuery, schema);
+// 4. Create Mapper and Ingest Data
+// const mapper = new GraphMapper(neo4jQuery, schema);
+// await mapper.ingest(usersData);
 
-// Ingest data into the graph
-await mapper.ingest(data);
+// console.log('Data ingestion complete!');
+// Expected result: 3 User nodes created, 2 Company nodes merged (c1 is reused), 3 WORKS_AT relationships created.
 ```
 
-## Custom Value Transformers
+*Note: You need to provide an object (`neo4jQuery` in the example) that the `GraphMapper` can use to execute Cypher queries. This object should have methods compatible with the interactions needed (e.g., running transactions, executing queries with parameters).*
 
-GraphMapper supports custom value transformers that can transform property values before setting them on nodes:
+## Advanced Features 🧠🛠️
 
-```typescript
-const registry = new TransformerRegistry();
+### Nested Data Structures (`subMappings`)
 
-// Register a custom transformer
-registry.register('uppercase', (value) => value.toUpperCase());
-
-// Use in schema
-const schema = {
-  nodes: [
-    {
-      type: 'Document',
-      idStrategy: 'uuid',
-      properties: [
-        { name: 'title', path: 'title', transformerId: 'uppercase' }
-      ]
-    }
-  ]
-};
-
-// Create mapper with custom registry
-const mapper = new GraphMapper(neo4jQuery, schema, registry);
-```
-
-## Default Transformers
-
-GraphMapper comes with several built-in transformers:
-
-- `toString` - Converts value to string
-- `toNumber` - Converts value to number
-- `extractText` - Extracts text from an object with a text property
-- `extractQuestionText` - Extracts question text from an object
-- `extractAnswerText` - Extracts answer text from an object
-- `parentId` - Extracts the ID of a parent node
-- `jsonpath` - Evaluates a JSONPath expression against the value
-
-## Complex Data Mapping Features
-
-### Nested Data Structures
-
-Use `subMappings` to handle nested structures:
+Handle hierarchical data naturally. Define a `subMappings` array within a `SchemaMapping`. Use `sourceDataPath` to specify the nested field, and use `$parent` context in relationship paths.
 
 ```typescript
-{
-  nodes: [
-    { type: 'Department', properties: [...] }
-  ],
+// Example: Mapping Orders and their LineItems
+const orderSchema = {
+  nodes: [{ type: 'Order', idStrategy: 'fromData', idField: 'orderId', properties: [...] }],
   subMappings: [
     {
-      sourceDataPath: 'employees',
+      sourceDataPath: 'items', // Process the 'items' array within each order
       iterationMode: 'collection',
-      nodes: [
-        { type: 'Employee', properties: [...] }
-      ],
+      nodes: [{ type: 'LineItem', idStrategy: 'uuid', properties: [...] }],
       relationships: [
         {
-          type: 'WORKS_IN',
-          from: { path: '$current.Employee.id' },
-          to: { path: '$parent.Department.id' }
+          type: 'CONTAINS_ITEM',
+          from: { path: '$parent.Order.id' }, // Link item to its parent Order
+          to: { path: '$current.LineItem.id' }
         }
       ]
     }
   ]
-}
+};
 ```
 
-### Reference Nodes
+### Custom Value Transformers
 
-Reference nodes are created with `MERGE` instead of `CREATE` and can be shared across the graph:
+Register functions to transform data before it's set as a property.
 
 ```typescript
+import { TransformerRegistry } from './TransformerRegistry'; // Assuming registry is exported
+
+const registry = new TransformerRegistry();
+registry.register('cleanupText', (value) => value.trim().toLowerCase());
+
+// Use in PropertyDefinition:
+// { name: 'description', path: 'desc', transformerId: 'cleanupText' }
+
+// Pass registry to constructor:
+// const mapper = new GraphMapper(neo4jQuery, schema, registry);
+```
+
+**Default Transformers:** `toString`, `toNumber`, `extractText`, `extractQuestionText`, `extractAnswerText`, `parentId`, `jsonpath`.
+
+### Complex JSONPath Usage
+
+JSONPath can be used within transformers or for conditional relationship matching:
+
+```typescript
+// Property Transformation using 'jsonpath' transformer
 {
-  type: 'Category',
-  idStrategy: 'fixed',
-  idValue: 'category-1',
-  isReference: true,
-  properties: [
-    { name: 'name', default: 'Main Category' }
-  ]
+  name: 'initials',
+  path: 'authorName', // Input is the full name string
+  transformerId: 'jsonpath',
+  transformerParams: {
+    // JSONPath expression applied to the *value* from 'authorName'
+    path: '$..split(" ").map(word => word[0]).join("")'
+  }
+}
+
+// Conditional Relationship (Connect Document to Approver User)
+{
+  type: 'APPROVED_BY',
+  from: { path: '$current.Document.id' },
+  // Find the specific user node marked as 'Approver' globally
+  to: { path: '$global.User[?(@.role=="Approver")].id' }
 }
 ```
 
-## API Reference
+## API Reference 📖
 
 ### Constructor
 
 ```typescript
 constructor(
-  neo4jQuery: Neo4jQuery,
+  neo4jQuery: Neo4jQuery, // Your Neo4j interaction object
   schema: SchemaMapping,
-  transformerRegistry?: TransformerRegistry
+  transformerRegistry?: TransformerRegistry // Optional custom transformers
 )
 ```
 
 ### Methods
 
-#### ingest
+*   `async ingest(data: any): Promise<void>`: Processes the data according to the schema and executes Cypher queries via `neo4jQuery`.
+*   `serializeSchema(): string`: Returns the schema as a JSON string.
+*   `static fromSerialized(neo4jQuery: Neo4jQuery, serializedSchema: string, transformerRegistry?: TransformerRegistry): GraphMapper`: Creates a mapper instance from a serialized schema string.
 
-```typescript
-async ingest(data: any): Promise<void>
-```
-Maps the input data to graph structures and persists them to the Neo4j database.
+## Dive Deeper: Examples in Tests 🔍🎯
 
-#### serializeSchema
+**The most comprehensive examples are in the test suite!** Explore `tests/GraphMapper.test.ts` to see various scenarios in action, including:
 
-```typescript
-serializeSchema(): string
-```
-Serializes the schema to a JSON string.
+*   Different ID strategies
+*   Type conversions
+*   Nested mappings
+*   Reference nodes
+*   JSONPath usage
+*   Relationship contexts (`$current`, `$parent`)
 
-#### static fromSerialized
+## Best Practices 👍⭐
 
-```typescript
-static fromSerialized(
-  neo4jQuery: Neo4jQuery, 
-  serializedSchema: string, 
-  transformerRegistry?: TransformerRegistry
-): GraphMapper
-```
-Creates a new GraphMapper instance from a serialized schema.
+1.  **Schema First:** Design your target graph model before writing the schema.
+2.  **Start Simple:** Test with basic data and gradually add complexity.
+3.  **Choose ID Strategy Wisely:** Use `fromData` for natural keys, `uuid` when needed, `fixed` (+`isReference`) for shared/singleton nodes.
+4.  **Use JSONPath Contexts:** Understand `$current`, `$parent`, `$global` for robust relationship mapping.
+5.  **Leverage Reference Nodes:** Avoid data duplication for common entities (Tags, Categories, Statuses).
+6.  **Test Thoroughly:** Validate mappings with diverse data, especially edge cases and nested structures.
+7.  **Error Handling:** The `ingest` process might throw errors (database issues, potentially mapping issues if data is invalid). Implement appropriate try/catch blocks in your application code.
 
-## Advanced Usage
+## Internal Details ⚙️
 
-### Using JSONPath for Complex Property Mapping
-
-```typescript
-{
-  name: 'fullName',
-  path: '$data.name',
-  transformerId: 'jsonpath',
-  transformerParams: {
-    path: '$.firstName + " " + $.lastName'
-  }
-}
-```
-
-### Conditional Relationship Creation
-
-```typescript
-{
-  type: 'APPROVED_BY',
-  from: { path: '$current.Document.id' },
-  to: { path: '$global.User[?(@.role=="Approver")]..id' }
-}
-```
-
-## Best Practices
-
-1. **Start simple** - Build your schema incrementally, testing with simple data first
-2. **Use appropriate ID strategies** - UUID for most nodes, fixed IDs for reference nodes
-3. **Leverage JSONPath** - For complex property extraction and node references
-4. **Define sensible defaults** - To handle missing data gracefully
-5. **Create custom transformers** - For complex data transformations
-6. **Test thoroughly** - Especially with complex nested data structures
-
-## Internal Details
-
-- All nodes receive a `createdAt` timestamp property
-- Node IDs must be unique across the entire graph
-- Reference nodes use `MERGE` to avoid duplicates
-- Regular nodes use `CREATE`
-- Relationships are created after all nodes
-- Property values are converted to appropriate Neo4j types
+*   Nodes automatically get a `createdAt` timestamp property.
+*   Node IDs (`id` property generated based on `idStrategy`) are expected to be unique within the graph for reliable matching.
+*   `CREATE` is used for regular nodes, `MERGE` for nodes with `isReference: true`.
+*   Property values are automatically converted to appropriate Neo4j types (`integer`, `float`, `boolean`, `date`) if specified in the schema.
