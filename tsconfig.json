@@ -1,0 +1,9 @@
+// tsconfig.json (new root file)
+{
+  "files": [], // This file doesn't compile anything directly
+  "include": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.test.json" }
+  ]
+} 

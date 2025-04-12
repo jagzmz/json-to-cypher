@@ -1,5 +1,5 @@
-import { GraphMapper } from "./GraphMapper";
-import { TransformerRegistry, SchemaMapping } from "./TransformerRegistry";
+import { GraphMapper } from "../src/GraphMapper";
+import { TransformerRegistry, SchemaMapping } from "../src/TransformerRegistry";
 import { isDateTime, isInt } from "neo4j-driver";
 
 describe("GraphMapper", () => {
@@ -156,18 +156,18 @@ describe("GraphMapper", () => {
       const { queries } = await graphMapper.ingest(sampleData);
 
       const nodeCalls = queries.filter(
-        (call: any) =>
-          (call[0].includes("CREATE") || call[0].includes("MERGE")) &&
-          call[0].includes("SET")
+        (query) =>
+          (query.query.includes("CREATE") || query.query.includes("MERGE")) &&
+          query.query.includes("SET")
       );
 
       for (const call of nodeCalls) {
-        const propsKey = Object.keys(call[1]).find((k) =>
+        const propsKey = Object.keys(call.params).find((k: string) =>
           k.startsWith("props_")
         );
         expect(propsKey).toBeDefined();
         if (propsKey) {
-          const props = call[1][propsKey];
+          const props = call.params[propsKey];
           expect(props.createdAt).toBeDefined();
           expect(isDateTime(props.createdAt)).toBeTruthy();
         }

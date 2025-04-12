@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    /* Base Options: */
+    "target": "ES2016",
+    "module": "CommonJS", // Keep CommonJS for now, review if necessary for ESM builds
+    "declaration": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Strict Type-Checking Options: */
+    "strict": true,
+
+    /* Source Map Options: */
+    "sourceMap": true,
+
+    /* Advanced Options: */
+    "skipLibCheck": true
+  }
+} 
