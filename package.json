@@ -1,6 +1,6 @@
 {
   "name": "@jagzmz/json-to-cypher",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Convert JSON to Cypher queries",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -23,7 +23,7 @@
     "test": "jest",
     "build": "pnpm run build:app && pnpm run build:browser && cpx \"dist/index.global.js\" playground",
     "build:app": "tsup --tsconfig tsconfig.app.json",
-    "build:browser": "tsup --config tsup.browser.config.ts",
+    "build:browser": "tsup --config tsup.browser.config.ts && cp dist/index.global.js playground",
     "prepublishOnly": "pnpm run build",
     "playground:deploy": "npm run build:browser",
     "playground:serve": "npm run build:browser && cd playground && npx http-server -o"

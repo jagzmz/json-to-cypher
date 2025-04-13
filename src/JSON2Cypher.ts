@@ -217,11 +217,9 @@ export class JSON2Cypher {
       isMerge?: boolean;
     }>;
   }> {
-    const addedNodeIds = new Set<string>(); // Initialize the shared set here
     const { nodes, relationships } = await this.mapDataToGraph(
       this.schema,
-      data,
-      addedNodeIds // Pass the set to the initial call
+      data
     );
 
     const nodeQueries = await Promise.all(
@@ -237,7 +235,7 @@ export class JSON2Cypher {
   private async mapDataToGraph(
     schema: SchemaMapping,
     data: any,
-    addedNodeIds: Set<string>, // Accept the set as a parameter
+    processedNodes: Map<string, { id: string; type: string; properties: Record<string, any>; isReference: boolean }> = new Map(),
     parentContext: any = {},
     rootNodes: Record<string, any> = {}
   ): Promise<{
@@ -314,12 +312,23 @@ export class JSON2Cypher {
           ...nodeProps,
         };
 
-        // Add node to the main nodes array ONLY if its ID hasn't been added before.
-        // This prevents duplicates, especially for reference nodes across iterations.
-        if (!addedNodeIds.has(nodeId)) {
-          nodes.push(node);
-          addedNodeIds.add(nodeId); // Mark this ID as added to the final list
-        }
+        // Define the node structure for the map
+        const newNodeDefinition = {
+          id: nodeId,
+          type: nodeDef.type,
+          properties: nodeProps,
+          isReference: nodeDef.isReference ?? false,
+        };
+
+        // Add/Update node in the processedNodes map, prioritizing non-reference definitions
+        const existingNodeDefinition = processedNodes.get(nodeId);
+        if (!existingNodeDefinition || (existingNodeDefinition.isReference && !newNodeDefinition.isReference)) {
+          // If no existing node, or if existing is reference and new is not, add/overwrite with new node
+          processedNodes.set(nodeId, newNodeDefinition);
+        } 
+        // Optional: If both are reference or both non-reference, could potentially merge properties,
+        // but prioritizing the first full definition encountered is usually sufficient.
+        // For now, we keep the existing one if the new one doesn't offer improvement (e.g., switching from non-ref to ref).
 
         // Track this node by type for relationship creation
         if (!createdNodesByType[nodeDef.type]) {
@@ -375,18 +384,25 @@ export class JSON2Cypher {
             await this.mapDataToGraph(
               subMapping, 
               item, 
-              addedNodeIds, // Pass the SAME set down recursively
+              processedNodes, // Pass the Map down recursively
               itemContext, 
               rootNodes
             );
-
-            nodes.push(...childNodes);
-            relationships.push(...childRels);
+          // Note: childNodes from recursive calls are already handled by the shared processedNodes map
+          // We only need to collect the relationships from sub-mappings
+          relationships.push(...childRels);
         }
       }
     }
 
-    return { nodes, relationships };
+    // Convert the final, prioritized nodes from the map into the result array
+    const finalNodes = Array.from(processedNodes.values()).map(n => ({
+      id: n.id,
+      type: n.type,
+      ...n.properties // Spread the collected properties
+    }));
+
+    return { nodes: finalNodes, relationships };
   }
 
   private createRelationshipsWithJSONPath(

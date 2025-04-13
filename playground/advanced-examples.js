@@ -148,6 +148,7 @@ const ordersData = [
         customerId: "cust1",
         name: "John Doe",
         email: "john@example.com",
+        friends: ["cust2"]
       },
       items: [
         { productId: "prod1", quantity: 1, price: 799.99, product:{ name: "Smartphone" } },
@@ -210,6 +211,26 @@ const ordersSchema = {
       },
     ],
     subMappings: [
+      {
+        sourceDataPath: "customer.friends", // Process the friends array
+        iterationMode: "collection",
+        nodes: [
+          {
+            type: "Customer", // Reference the friend Customer node
+            idStrategy: "fromData",
+            idField: ".", // ID is the value in the friends array (e.g., "cust2")
+            isReference: true, // Use MERGE
+            properties: [], // No properties needed, just matching
+          },
+        ],
+        relationships: [
+          {
+            type: "IS_FRIEND_OF",
+            from: { path: "$parent.Customer.id" }, // From the main customer (John Doe)
+            to: { path: "$current.Customer.id" }, // To the referenced friend customer (Jane Smith)
+          },
+        ],
+      },
       {
         sourceDataPath: "items",
         iterationMode: "collection",

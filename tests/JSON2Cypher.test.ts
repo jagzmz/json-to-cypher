@@ -293,7 +293,9 @@ describe("JSON2Cypher", () => {
     });
 
     it("should correctly map data to nodes and relationships", async () => {
-      const result = await mapDataToGraphMethod(sampleSchema, sampleData, new Set<string>());
+      // Initialize the Map for this test case
+      const processedNodesMap = new Map<string, { id: string; type: string; properties: Record<string, any>; isReference: boolean }>();
+      const result = await mapDataToGraphMethod(sampleSchema, sampleData, processedNodesMap);
 
       // Verify the structure of the result
       expect(result).toHaveProperty("nodes");
@@ -433,9 +435,11 @@ describe("JSON2Cypher", () => {
       const mapNestedDataMethod = (nestedMapper as any).mapDataToGraph.bind(
         nestedMapper
       );
+      // Initialize the Map for this test case
+      const processedNodesMapNested = new Map<string, { id: string; type: string; properties: Record<string, any>; isReference: boolean }>();
 
       // Map the nested data
-      const result = await mapNestedDataMethod(nestedSchema, nestedData, new Set<string>());
+      const result = await mapNestedDataMethod(nestedSchema, nestedData, processedNodesMapNested);
 
       // Verify nodes - 1 Company + 2 Departments
       expect(result.nodes.length).toBe(3);
@@ -528,9 +532,11 @@ describe("JSON2Cypher", () => {
       const mapTypesMethod = (typesMapper as any).mapDataToGraph.bind(
         typesMapper
       );
+      // Initialize the Map for this test case
+      const processedNodesMapTypes = new Map<string, { id: string; type: string; properties: Record<string, any>; isReference: boolean }>();
 
       // Map the data
-      const result = await mapTypesMethod(typesSchema, typesData, new Set<string>());
+      const result = await mapTypesMethod(typesSchema, typesData, processedNodesMapTypes);
 
       // Verify node was created
       expect(result.nodes.length).toBe(1);
@@ -917,6 +923,201 @@ describe("JSON2Cypher", () => {
       // Check that Products and Statuses use MERGE (due to isReference)
       expect(productQueries.every(q => q.query.includes('MERGE'))).toBeTruthy();
       expect(statusQueries.every(q => q.query.includes('MERGE'))).toBeTruthy();
+    });
+
+    it("should handle 'Orders with Friends' relationship", async () => {
+      // Data and schema from playground/advanced-examples.js (with friends)
+      const ordersDataWithFriends = [
+        {
+          orderId: "o1",
+          date: "2023-05-15",
+          customer: {
+            customerId: "cust1",
+            name: "John Doe",
+            email: "john@example.com",
+            friends: ["cust2"] // John is friends with Jane
+          },
+          items: [
+            { productId: "prod1", quantity: 1, price: 799.99, product:{ name: "Smartphone" } },
+            { productId: "prod3", quantity: 2, price: 89.99, product:{ name: "Coffee Maker" } },
+          ],
+          status: "completed",
+        },
+        {
+          orderId: "o2",
+          date: "2023-05-16",
+          customer: {
+            customerId: "cust2",
+            name: "Jane Smith",
+            email: "jane@example.com",
+            // No friends listed for Jane in this data
+          },
+          items: [{ productId: "prod2", quantity: 1, price: 1299.99, product:{ name: "Laptop" } }],
+          status: "processing",
+        },
+      ];
+
+      const ordersSchemaWithFriends: SchemaMapping = {
+        iterationMode: "collection",
+        nodes: [
+          {
+            type: "Order",
+            idStrategy: "fromData",
+            idField: "orderId",
+            properties: [
+              { name: "date", path: "date", type: "date" },
+              { name: "status", path: "status" },
+            ],
+          },
+          {
+            type: "Customer",
+            idStrategy: "fromData",
+            idField: "customer.customerId",
+            properties: [
+              { name: "name", path: "customer.name" },
+              { name: "email", path: "customer.email" },
+            ],
+          },
+          {
+            type: "Status",
+            idStrategy: "fromData",
+            idField: "status",
+            isReference: true,
+            properties: [{ name: "name", path: "status" }],
+          },
+        ],
+        relationships: [
+          {
+            type: "PLACED_BY",
+            from: { path: "$current.Order.id" },
+            to: { path: "$current.Customer.id" },
+          },
+          {
+            type: "HAS_STATUS",
+            from: { path: "$current.Order.id" },
+            to: { path: "$current.Status.id" },
+          },
+        ],
+        subMappings: [
+          {
+            sourceDataPath: "customer.friends", // Process the friends array
+            iterationMode: "collection",
+            nodes: [
+              {
+                type: "Customer", // Reference the friend Customer node
+                idStrategy: "fromData",
+                idField: ".", // ID is the value in the friends array (e.g., "cust2")
+                isReference: true, // Use MERGE
+                properties: [], // No properties needed, just matching
+              },
+            ],
+            relationships: [
+              {
+                type: "IS_FRIEND_OF",
+                from: { path: "$parent.Customer.id" }, // From the main customer (John Doe)
+                to: { path: "$current.Customer.id" }, // To the referenced friend customer (Jane Smith)
+              },
+            ],
+          },
+          {
+            sourceDataPath: "items",
+            iterationMode: "collection",
+            nodes: [
+              {
+                type: "OrderItem",
+                idStrategy: "uuid",
+                properties: [
+                  { name: "quantity", path: "quantity", type: "integer" },
+                  { name: "price", path: "price", type: "float" },
+                ],
+              },
+              {
+                type: "Product",
+                idStrategy: "fromData",
+                idField: "productId",
+                isReference: true,
+                properties: [
+                   // Intentionally left empty for this example, assume Product names exist elsewhere
+                ],
+              },
+            ],
+            relationships: [
+              {
+                type: "CONTAINS",
+                from: { path: "$parent.Order.id" },
+                to: { path: "$current.OrderItem.id" },
+              },
+              {
+                type: "IS_PRODUCT",
+                from: { path: "$current.OrderItem.id" },
+                to: { path: "$data.productId", nodeType: "Product" }, // Assuming Product node exists
+              },
+            ],
+          },
+        ],
+      };
+
+      const mapper = new JSON2Cypher(ordersSchemaWithFriends);
+      const { queries } = await mapper.generateQueries(ordersDataWithFriends);
+
+      // --- Assertions ---
+      // Expected: 2 Orders + 2 Customers + 2 Statuses + 3 OrderItems + 3 Products + 2 PLACED_BY + 2 HAS_STATUS + 1 IS_FRIEND_OF + 3 CONTAINS + 3 IS_PRODUCT = 23
+      // Note: The Customer node for the friend ('cust2') is added via the subMapping's isReference=true, 
+      // and the duplicate definition during the second order processing is skipped by the mapper.
+      expect(queries.length).toBe(23);
+
+      // Verify counts of each type
+      const orderQueries = queries.filter(q => q.query.includes(':Order') && !q.query.includes('OrderItem'));
+      const customerQueries = queries.filter(q => q.query.includes(':Customer') && q.query.includes('SET')); // Actual Customer CREATE/MERGEs
+      const statusQueries = queries.filter(q => q.query.includes(':Status'));
+      const orderItemQueries = queries.filter(q => q.query.includes(':OrderItem'));
+      const productQueries = queries.filter(q => q.query.includes(':Product'));
+      const placedByRels = queries.filter(q => q.query.includes(':PLACED_BY'));
+      const hasStatusRels = queries.filter(q => q.query.includes(':HAS_STATUS'));
+      const isFriendOfRels = queries.filter(q => q.query.includes(':IS_FRIEND_OF'));
+      const containsRels = queries.filter(q => q.query.includes(':CONTAINS'));
+      const isProductRels = queries.filter(q => q.query.includes(':IS_PRODUCT'));
+
+      expect(orderQueries.length).toBe(2);
+      expect(customerQueries.length).toBe(2); // cust1, cust2 (created/merged by main node def)
+      expect(statusQueries.length).toBe(2); // completed, processing (merged)
+      // We don't expect an extra Customer node MERGE query from the friends submapping because the library detects duplicates based on ID.
+      // The relationship query will still use the friend's ID ('cust2').
+      expect(orderItemQueries.length).toBe(3);
+      expect(productQueries.length).toBe(3);
+      expect(placedByRels.length).toBe(2);
+      expect(hasStatusRels.length).toBe(2);
+      expect(isFriendOfRels.length).toBe(1); // Only John has a friend listed
+      expect(containsRels.length).toBe(3);
+      expect(isProductRels.length).toBe(3);
+
+      // Specifically check the IS_FRIEND_OF relationship query
+      const friendRel = isFriendOfRels[0];
+      expect(friendRel).toBeDefined();
+      expectRelationshipQuery(friendRel, 'IS_FRIEND_OF', { from: 'cust1', to: 'cust2' });
+
+      // --- Added Property Checks ---
+      // Find the query that sets properties for Customer cust1
+      const cust1Query = queries.find(q => 
+        q.query.includes(':Customer') && 
+        q.params[Object.keys(q.params).find(k => k.startsWith('id_'))!] === 'cust1'
+      );
+      expect(cust1Query).toBeDefined();
+      const cust1PropsKey = Object.keys(cust1Query!.params).find(k => k.startsWith('props_'));
+      expect(cust1PropsKey).toBeDefined();
+      expect(cust1Query!.params[cust1PropsKey!].name).toBe('John Doe');
+      expect(cust1Query!.params[cust1PropsKey!].email).toBe('john@example.com');
+
+      // Find the query that sets properties for Customer cust2
+      const cust2Query = queries.find(q => 
+        q.query.includes(':Customer') && 
+        q.params[Object.keys(q.params).find(k => k.startsWith('id_'))!] === 'cust2'
+      );
+      expect(cust2Query).toBeDefined();
+      const cust2PropsKey = Object.keys(cust2Query!.params).find(k => k.startsWith('props_'));
+      expect(cust2PropsKey).toBeDefined();
+      expect(cust2Query!.params[cust2PropsKey!].name).toBe('Jane Smith');
+      expect(cust2Query!.params[cust2PropsKey!].email).toBe('jane@example.com');
     });
   });
 });
