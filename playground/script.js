@@ -9,6 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadSampleSchemaBtn = document.getElementById('load-sample-schema');
     const exampleSelect = document.getElementById('example-select');
     const loadExampleBtn = document.getElementById('load-example');
+    const shareBtnContainer = document.createElement('div'); // Create a container for the share button
+    shareBtnContainer.style.display = 'inline-block'; // Keep it next to generate button
+    shareBtnContainer.style.marginLeft = '10px';
+    const shareBtn = document.createElement('button');
+    shareBtn.id = 'share-btn';
+    shareBtn.textContent = 'Share';
+    shareBtn.className = 'btn btn-secondary'; // Use similar styling
+    shareBtnContainer.appendChild(shareBtn);
+    generateBtn.parentNode.insertBefore(shareBtnContainer, generateBtn.nextSibling);
     
     // Initialize JSON editors
     const jsonEditor = new JSONEditor(document.getElementById('json-editor'), {
@@ -140,8 +149,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Generate Cypher queries
-    generateBtn.addEventListener('click', async function() {
+    // Generate Cypher queries (Refactored Core Logic)
+    async function generateGraphAndQueries() {
         cypherOutput.innerHTML = '';
         graphVis.innerHTML = '';
         queriesHeading.textContent = 'Generated Cypher Queries';
@@ -180,7 +189,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             showError(`Error: ${error.message}`);
         }
-    });
+    }
+
+    // Event listener for the generate button
+    generateBtn.addEventListener('click', generateGraphAndQueries);
 
     // Display Cypher queries in the output area
     function displayQueries(queries) {
@@ -360,9 +372,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!nodeMap.has(nodeId) && nodeId) {
                         const properties = queryObj.params[`props_${varName}`] || {};
                         let label = properties.name || properties.title || nodeType;
-                        if (label.length > 20) {
-                            label = label.substring(0, 17) + '...';
-                        }
                         
                         nodeTypes.add(nodeType);
                         
@@ -464,6 +473,14 @@ document.addEventListener('DOMContentLoaded', function() {
             'default': '#9E9E9E'     // Gray for unknown types
         };
 
+        // Ensure all node types have a color assigned
+        const assignedColors = { ...nodeTypeColors }; // Clone predefined colors
+        Array.from(nodeTypes).forEach(type => {
+            if (!assignedColors[type] && type !== 'default') { // Don't overwrite explicit default
+                assignedColors[type] = stringToColor(type); // Generate and assign color
+            }
+        });
+
         // Initialize Cytoscape with simple settings
         const cy = cytoscape({
             container: cyContainer,
@@ -474,7 +491,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     style: {
                         'background-color': (ele) => {
                             const nodeType = ele.data('type');
-                            return nodeTypeColors[nodeType] || nodeTypeColors.default;
+                            // Use the potentially generated color map
+                            return assignedColors[nodeType] || assignedColors.default;
                         },
                         'border-width': (ele) => ele.data('isMerge') ? 3 : 0,
                         'border-color': '#37474f',
@@ -502,6 +520,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         'text-background-color': 'white',
                         'text-background-opacity': 0.8,
                         'text-background-padding': '2px'
+                    }
+                },
+                {
+                    selector: '.hidden-element', // Style for hidden elements
+                    style: {
+                        'display': 'none'
                     }
                 }
             ],
@@ -580,20 +604,34 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const colorBox = document.createElement('span');
             colorBox.className = 'graph-legend-color';
-            colorBox.style.backgroundColor = nodeTypeColors[nodeType] || nodeTypeColors.default;
+            // Use the potentially generated color map for the legend as well
+            colorBox.style.backgroundColor = assignedColors[nodeType] || assignedColors.default;
             
             const label = document.createElement('span');
-            // Truncate long type names
-            let displayType = nodeType;
-            if (displayType.length > 12) {
-                displayType = displayType.substring(0, 10) + '...';
-                legendItem.title = nodeType; // Add tooltip with full name
-            }
-            label.textContent = displayType;
+            label.textContent = nodeType;
             
             legendItem.appendChild(colorBox);
             legendItem.appendChild(label);
             legend.appendChild(legendItem);
+
+            // Add click listener for toggling visibility
+            legendItem.addEventListener('click', () => {
+                const nodesOfType = cy.nodes(`[type = "${nodeType}"]`);
+                const connectedEdges = nodesOfType.connectedEdges();
+                const elementsToToggle = nodesOfType.union(connectedEdges);
+                
+                const isHidden = legendItem.classList.toggle('hidden-legend');
+                
+                cy.batch(() => { // Use batch for performance
+                    if (isHidden) {
+                        elementsToToggle.addClass('hidden-element');
+                    } else {
+                        elementsToToggle.removeClass('hidden-element');
+                        // Ensure connected nodes that might have been hidden via other types are shown
+                        connectedEdges.connectedNodes().removeClass('hidden-element');
+                    }
+                });
+            });
         });
         
         // Add merge node indicator to legend if needed
@@ -603,6 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const colorBox = document.createElement('span');
             colorBox.className = 'graph-legend-color';
+            // Revert to original styling for MERGE indicator
             colorBox.style.backgroundColor = 'white';
             colorBox.style.border = '3px solid #37474f';
             
@@ -612,6 +651,25 @@ document.addEventListener('DOMContentLoaded', function() {
             mergeLegendItem.appendChild(colorBox);
             mergeLegendItem.appendChild(label);
             legend.appendChild(mergeLegendItem);
+
+            // Add click listener for toggling MERGE node visibility
+             mergeLegendItem.addEventListener('click', () => {
+                const mergeNodes = cy.nodes('[isMerge = true]');
+                const connectedEdges = mergeNodes.connectedEdges();
+                const elementsToToggle = mergeNodes.union(connectedEdges);
+
+                const isHidden = mergeLegendItem.classList.toggle('hidden-legend');
+
+                cy.batch(() => {
+                    if (isHidden) {
+                        elementsToToggle.addClass('hidden-element');
+                    } else {
+                        elementsToToggle.removeClass('hidden-element');
+                        // Ensure connected nodes that might have been hidden via other types are shown
+                        connectedEdges.connectedNodes().removeClass('hidden-element');
+                    }
+                });
+            });
         }
         
         graphVis.appendChild(legend);
@@ -625,7 +683,169 @@ document.addEventListener('DOMContentLoaded', function() {
         cypherOutput.appendChild(errorDiv);
     }
 
-    // Initialize the editors with sample data
-    loadSampleDataBtn.click();
-    loadSampleSchemaBtn.click();
+    // Helper function to generate a simple hash from a string
+    function simpleHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return Math.abs(hash);
+    }
+
+    // Helper function to generate a color based on a string hash
+    function stringToColor(str) {
+        const hash = simpleHash(str);
+        const hue = hash % 360; // Hue out of 360
+        const saturation = 60 + (hash % 20); // Saturation between 60-80%
+        const lightness = 45 + (hash % 10);  // Lightness between 45-55%
+        return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
+
+    // --- Share Functionality ---
+
+    const shareApiEndpoint = 'https://digest.mithya.workers.dev/';
+
+    // Simple Toast Notification Function
+    function showToast(message, isError = false) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${isError ? 'error' : 'success'}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => { 
+            toast.style.opacity = '1';
+        }, 10); 
+
+        // Automatically remove after a few seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => { 
+                if (toast.parentNode) { // Check if it still exists
+                    document.body.removeChild(toast);
+                }
+            }, 300); // Wait for fade out animation
+        }, 3500); // Toast visible for 3.5 seconds
+    }
+
+    // Handle Share Button Click
+    async function handleShare() {
+        shareBtn.textContent = 'Sharing...';
+        shareBtn.disabled = true;
+
+        try {
+            const data = jsonEditor.get();
+            const schema = schemaEditor.get();
+
+            const payload = { data, schema };
+
+            const response = await fetch(shareApiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result && result.key) {
+                const shareUrl = `${window.location.origin}${window.location.pathname}?shared=${result.key}`;
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showToast('Share link copied to clipboard!');
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    showToast('Copied link to console (clipboard failed). URL: ' + shareUrl); // Fallback
+                    console.log("Share URL:", shareUrl);
+                });
+            } else {
+                throw new Error('Invalid response from share API.');
+            }
+
+        } catch (error) {
+            console.error('Sharing failed:', error);
+            showError(`Sharing failed: ${error.message}`); // Show in query output area
+            showToast('Failed to share state.', true);
+        } finally {
+            shareBtn.textContent = 'Share';
+            shareBtn.disabled = false;
+        }
+    }
+
+    shareBtn.addEventListener('click', handleShare);
+
+    // --- Load Shared State on Page Load ---
+    async function loadSharedState() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const shareKey = urlParams.get('shared');
+
+        if (shareKey) {
+            console.log('Found shared key:', shareKey);
+            showToast('Loading shared state...');
+            // Disable buttons while loading
+            generateBtn.disabled = true;
+            shareBtn.disabled = true;
+            loadSampleDataBtn.disabled = true;
+            loadSampleSchemaBtn.disabled = true;
+            loadExampleBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`${shareApiEndpoint}${shareKey}`);
+                if (!response.ok) {
+                     if (response.status === 404) {
+                        throw new Error('Shared state not found (404).');
+                    } else {
+                        throw new Error(`Failed to fetch shared state. Status: ${response.status}`);
+                    }
+                }
+
+                const sharedState = await response.json();
+
+                if (sharedState && sharedState.data && sharedState.schema) {
+                    jsonEditor.set(sharedState.data);
+                    schemaEditor.set(sharedState.schema);
+                    showToast('Shared state loaded successfully!');
+                    
+                    // Automatically generate the graph
+                    await generateGraphAndQueries(); 
+                    // Remove the share param from URL without reload to avoid re-fetching on refresh
+                    history.replaceState(null, '', window.location.pathname); 
+                } else {
+                    throw new Error('Invalid data received for shared state.');
+                }
+            } catch (error) {
+                console.error('Failed to load shared state:', error);
+                showError(`Failed to load shared state: ${error.message}. Loading default examples.`);
+                showToast(`Failed to load shared state: ${error.message}`, true);
+                // Load default sample if loading fails
+                loadSampleDataBtn.click();
+                loadSampleSchemaBtn.click();
+            } finally {
+                 // Re-enable buttons
+                 generateBtn.disabled = false;
+                 shareBtn.disabled = false;
+                 loadSampleDataBtn.disabled = false;
+                 loadSampleSchemaBtn.disabled = false;
+                 loadExampleBtn.disabled = false;
+            }
+        } else {
+            // No shared key, load default sample data/schema
+            loadSampleDataBtn.click();
+            loadSampleSchemaBtn.click();
+        }
+    }
+
+    // Modify the end of the script to call loadSharedState instead of direct sample loading
+    // Initialize the editors with sample data OR shared state
+    // loadSampleDataBtn.click(); // Remove these lines
+    // loadSampleSchemaBtn.click(); // Remove these lines
+    loadSharedState(); // Call the new function
 }); 

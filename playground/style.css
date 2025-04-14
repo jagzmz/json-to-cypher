@@ -268,6 +268,47 @@ button#generate-queries:active {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
+/* Share Button Styling */
+button#share-btn {
+    background-color: var(--secondary-color); /* Use secondary color */
+    color: white;
+    font-size: 1rem; /* Match generate button */
+    font-weight: 500; /* Match generate button */
+    padding: 0.8rem 2rem; /* Match generate button */
+    border: none;
+    border-radius: 8px; /* Match generate button */
+    cursor: pointer;
+    transition: all 0.2s ease; /* Match generate button */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15); /* Match generate button */
+    /* Remove width: 100% if it should not fill container */
+}
+
+button#share-btn:hover {
+    background-color: #2bbbad; /* Lighter shade of secondary color */
+    transform: translateY(-1px); /* Match generate button */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Match generate button */
+}
+
+button#share-btn:active {
+    transform: translateY(1px); /* Match generate button */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); /* Match generate button */
+}
+
+button#share-btn:disabled {
+    background-color: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* Adjust the container for the share button */
+#share-btn-container { /* The ID used in script.js */
+    display: inline-block; /* Keeps it inline */
+    margin-left: 10px; /* Spacing from generate button */
+    vertical-align: top; /* Align with generate button */
+}
+
 /* Buttons */
 .input-column .card > button {
     margin: 0.6rem 1rem;
@@ -609,4 +650,37 @@ footer a:hover {
     font-size: 1.1rem;
     font-weight: 500;
     border-bottom: 1px solid var(--border-color);
+}
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 10px 20px;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1000;
+    max-width: 80%;
+    text-align: center;
+}
+
+.toast.success {
+    background-color: var(--success-color);
+}
+
+.toast.error {
+    background-color: var(--accent-color);
+}
+
+/* Legend Item Hidden State */
+.graph-legend-item.hidden-legend {
+    opacity: 0.5;
+    text-decoration: line-through;
+    cursor: pointer; /* Maintain pointer cursor */
 } 
