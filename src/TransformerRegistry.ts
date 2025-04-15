@@ -19,6 +19,7 @@ export interface PropertyDefinition {
 
 export interface RelationshipDefinition {
   type: string;
+  isReference?: boolean;
   from: {
     nodeType?: string;
     selector?: string; // Dot notation path or query selector

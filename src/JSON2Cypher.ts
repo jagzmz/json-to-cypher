@@ -408,7 +408,7 @@ export class JSON2Cypher {
   private createRelationshipsWithJSONPath(
     relationshipDefs: RelationshipDefinition[],
     context: any,
-    relationships: Array<{ from: string; to: string; type: string }>
+    relationships: Array<{ from: string; to: string; type: string, isReference?: boolean }>
   ): void {
     for (const relDef of relationshipDefs) {
       // Get source and target node IDs using JSONPath
@@ -495,6 +495,7 @@ export class JSON2Cypher {
             from: fromIds[i],
             to: toIds[i],
             type: relDef.type,
+            isReference: relDef.isReference,
           });
         }
       } else {
@@ -505,6 +506,7 @@ export class JSON2Cypher {
               from: fromId,
               to: toId,
               type: relDef.type,
+              isReference: relDef.isReference,
             });
           }
         }
@@ -710,14 +712,15 @@ export class JSON2Cypher {
     from: string;
     to: string;
     type: string;
+    isReference?: boolean;
   }) {
-    const { from, to, type } = relationship;
+    const { from, to, type, isReference } = relationship;
     const relVar = this.variableGenerator.getNext();
 
     const query = `
       MATCH (source) WHERE source.id = $fromId
       MATCH (target) WHERE target.id = $toId
-      CREATE (source)-[${relVar}:${type}]->(target)
+      ${isReference ? `MERGE` : `CREATE`} (source)-[${relVar}:${type}]->(target)
     `;
 
     const params = {
