@@ -1120,4 +1120,160 @@ describe("JSON2Cypher", () => {
       expect(cust2Query!.params[cust2PropsKey!].email).toBe('jane@example.com');
     });
   });
+
+  describe("Specific Relationship Patterns", () => {
+    it("should correctly link CodeRepository to CodeBlocks with isEntryPoint=true using final subMapping", async () => {
+      // Schema based on test.mapping.json
+      const entryPointSchema: SchemaMapping = {
+        iterationMode: "collection", // Process top-level as a collection (even if one item)
+        nodes: [
+          {
+            type: "CodeRepository",
+            idStrategy: "fromData",
+            idField: "url",
+            properties: [
+              { name: "url", path: "url" },
+              { name: "commitHash", path: "commitHash" },
+              { name: "branch", path: "branch" },
+            ],
+          },
+        ],
+        relationships: [],
+        subMappings: [
+          {
+            iterationMode: "collection",
+            sourceDataPath: "components",
+            nodes: [
+              {
+                type: "CodeBlock",
+                idStrategy: "fromData",
+                idField: "file.hash",
+                isReference: true, // Important for global context population
+                properties: [
+                  { name: "name", path: "id" },
+                  { name: "filePath", path: "file.path.absoluteFromRootDir" },
+                  { name: "hash", path: "file.hash" },
+                  { name: "isEntryPoint", path: "isEntryPoint", type: "boolean" }, // Ensure boolean type
+                ],
+              },
+            ],
+            relationships: [], // Keep empty as per final structure
+            subMappings: [
+                // ... potential nested mappings like imports, blocks ...
+                // Omitted for brevity in this specific test
+            ]
+          },
+          // Final subMapping to create the relationship *after* nodes are processed
+          {
+            iterationMode: "single", // Runs once
+            sourceDataPath: undefined, // No new data needed
+            nodes: [],
+            relationships: [
+              {
+                type: "HAS_ENTRYPOINT",
+                isReference: true, // Use MERGE for the relationship
+                from: {
+                  path: "$root.CodeRepository.id", // Access repo from root
+                },
+                to: {
+                  // Access CodeBlocks from global context, filtered by isEntryPoint
+                  path: "$global.CodeBlock[?(@.isEntryPoint == true)].id",
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      // Sample data
+      const entryPointData = [ // Array because top-level iterationMode is 'collection'
+        {
+          url: "https://github.com/test/repo",
+          commitHash: "abcdef123",
+          branch: "main",
+          components: [
+            {
+              id: "entry.js",
+              file: { hash: "hash1", path: { absoluteFromRootDir: "entry.js" } },
+              isEntryPoint: true, // This one should be linked
+            },
+            {
+              id: "util.js",
+              file: { hash: "hash2", path: { absoluteFromRootDir: "util.js" } },
+              isEntryPoint: false, // This one should NOT be linked
+            },
+            {
+              id: "config.js",
+              file: { hash: "hash3", path: { absoluteFromRootDir: "config.js" } },
+              // isEntryPoint missing, should also NOT be linked
+            },
+          ],
+        },
+      ];
+
+      const mapper = new JSON2Cypher(entryPointSchema);
+      const { queries } = await mapper.generateQueries(entryPointData);
+
+      // --- Assertions ---
+      // Expected: 1 Repo + 3 CodeBlocks (merged) + 1 HAS_ENTRYPOINT rel = 5 queries
+      expect(queries.length).toBe(5);
+
+      // Find the Repo query
+      const repoQuery = queries.find(q => q.query.includes(':CodeRepository'));
+      expect(repoQuery).toBeDefined();
+      expectCreateNodeQuery(repoQuery!, 'CodeRepository', 'https://github.com/test/repo', {
+        url: "https://github.com/test/repo",
+        commitHash: "abcdef123",
+        branch: "main",
+      });
+
+      // Find CodeBlock queries (should be MERGE due to isReference: true)
+      const codeBlockQueries = queries.filter(q => q.query.includes(':CodeBlock'));
+      expect(codeBlockQueries.length).toBe(3);
+      expect(codeBlockQueries.every(q => q.query.includes('MERGE'))).toBeTruthy();
+
+      // Check entry.js block
+      const entryBlockQuery = codeBlockQueries.find(q => q.params[Object.keys(q.params).find(k => k.startsWith('id_'))!] === 'hash1');
+      expect(entryBlockQuery).toBeDefined();
+      expectMergeNodeQuery(entryBlockQuery!, 'CodeBlock', expect.any(String), expect.any(String), 'hash1', {
+        name: "entry.js",
+        filePath: "entry.js",
+        hash: "hash1",
+        isEntryPoint: true,
+      });
+
+      // Check util.js block
+      const utilBlockQuery = codeBlockQueries.find(q => q.params[Object.keys(q.params).find(k => k.startsWith('id_'))!] === 'hash2');
+      expect(utilBlockQuery).toBeDefined();
+      expectMergeNodeQuery(utilBlockQuery!, 'CodeBlock', expect.any(String), expect.any(String), 'hash2', {
+        name: "util.js",
+        filePath: "util.js",
+        hash: "hash2",
+        isEntryPoint: false,
+      });
+
+      // Check config.js block
+      const configBlockQuery = codeBlockQueries.find(q => q.params[Object.keys(q.params).find(k => k.startsWith('id_'))!] === 'hash3');
+      expect(configBlockQuery).toBeDefined();
+       expectMergeNodeQuery(configBlockQuery!, 'CodeBlock', expect.any(String), expect.any(String), 'hash3', {
+        name: "config.js",
+        filePath: "config.js",
+        hash: "hash3",
+        isEntryPoint: undefined, // Use undefined for missing property
+      });
+
+      // Find HAS_ENTRYPOINT relationship query
+      const entryPointRelQuery = queries.find(q => q.query.includes(':HAS_ENTRYPOINT'));
+      expect(entryPointRelQuery).toBeDefined();
+      expect(entryPointRelQuery?.query.includes('MERGE')).toBeTruthy(); // isReference: true on relationship
+      expectRelationshipQuery(entryPointRelQuery!, 'HAS_ENTRYPOINT', {
+        from: "https://github.com/test/repo", // Repo ID
+        to: "hash1",                         // Entry point CodeBlock hash/ID
+      });
+
+      // Ensure no other HAS_ENTRYPOINT relationships were created
+      const allEntryPointRels = queries.filter(q => q.query.includes(':HAS_ENTRYPOINT'));
+      expect(allEntryPointRels.length).toBe(1);
+    });
+  });
 });

@@ -1,0 +1,148 @@
+{
+    "iterationMode": "collection",
+    "nodes": [
+        {
+            "type": "CodeRepository",
+            "idStrategy": "fromData",
+            "idField": "url",
+            "properties": [
+                {
+                    "name": "url",
+                    "path": "url"
+                },
+                {
+                    "name": "commitHash",
+                    "path": "commitHash"
+                },
+                {
+                    "name": "branch",
+                    "path": "branch"
+                }
+            ]
+        }
+    ],
+    "relationships": [],
+    "subMappings": [
+        {
+            "iterationMode": "collection",
+            "sourceDataPath": "components",
+            "nodes": [
+                {
+                    "type": "CodeBlock",
+                    "idStrategy": "fromData",
+                    "idField": "file.hash",
+                    "isReference": true,
+                    "properties": [
+                        {
+                            "name": "name",
+                            "path": "id"
+                        },
+                        {
+                            "name": "lineOfCodes",
+                            "path": "file.lineOfCodes",
+                            "type": "integer"
+                        },
+                        {
+                            "name": "filePath",
+                            "path": "file.path.absoluteFromRootDir"
+                        },
+                        {
+                            "name": "code",
+                            "path": "code"
+                        },
+                        {
+                            "name": "hash",
+                            "path": "file.hash"
+                        },
+                        {
+                            "name": "isEntryPoint",
+                            "path": "isEntryPoint"
+                        }
+                    ]
+                }
+            ],
+            "relationships": [],
+            "subMappings": [
+                {
+                    "sourceDataPath": "imports",
+                    "iterationMode": "collection",
+                    "nodes": [],
+                    "relationships": [
+                        {
+                            "type": "IMPORTS",
+                            "isReference": true,
+                            "from": {
+                                "path": "$parent.CodeBlock.id"
+                            },
+                            "to": {
+                                "path": "$data.importedFileHash"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "sourceDataPath": "blocks",
+                    "iterationMode": "collection",
+                    "nodes": [
+                        {
+                            "type": "CodeBlockSection",
+                            "idStrategy": "fromData",
+                            "idField": "hash",
+                            "properties": [
+                                {
+                                    "name": "codeBlockType",
+                                    "path": "type"
+                                },
+                                {
+                                    "name": "filePath",
+                                    "path": "id"
+                                },
+                                {
+                                    "name": "name",
+                                    "path": "name"
+                                },
+                                {
+                                    "name": "code",
+                                    "path": "body"
+                                },
+                                {
+                                    "name": "hash",
+                                    "path": "hash"
+                                }
+                            ]
+                        }
+                    ],
+                    "relationships": [
+                        {
+                            "type": "HAS_CODEBLOCK_SECTION",
+                            "isReference": true,
+                            "from": {
+                                "path": "$parent.CodeBlock.id"
+                            },
+                            "to": {
+                                "path": "$current.CodeBlockSection.id"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "iterationMode": "single",
+            "sourceDataPath": null,
+            "nodes": [],
+            "relationships": [
+                {
+                    "type": "HAS_ENTRYPOINT",
+                    "isReference": true,
+                    "from": {
+                        "path": "$root.CodeRepository.id"
+                    },
+                    "to": {
+                        "path": "$global.CodeBlock[?(@.isEntryPoint == true)].id"
+                    }
+                }
+            ]
+        }
+    ]
+}

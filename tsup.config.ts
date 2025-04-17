@@ -6,9 +6,9 @@ export default defineConfig({
   globalName: 'JSON2Cypher',
   dts: true, // Generate TypeScript declaration files
   splitting: false, // Prevent code splitting into chunks
-  sourcemap: false, // Generate sourcemaps
+  sourcemap: true, // Generate sourcemaps
   clean: false, // Clean output directory before build
-  minify: true,
+  minify: false,
   treeshake: true,
   shims: true,
   keepNames: false,

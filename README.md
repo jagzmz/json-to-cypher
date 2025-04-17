@@ -368,6 +368,110 @@ JSONPath can be used within transformers or for conditional relationship matchin
 }
 ```
 
+### Example: Linking Repository to Entry Points
+
+This example demonstrates a more complex scenario where a top-level `CodeRepository` node needs to be linked to specific `CodeBlock` nodes (defined in a sub-mapping) that are marked as entry points (`isEntryPoint: true`).
+
+The challenge is ensuring that all `CodeBlock` nodes (including their properties like `isEntryPoint`) are processed and available in the `$global` context *before* attempting to create the `HAS_ENTRYPOINT` relationship.
+
+**Solution:** Use a final `subMapping` with `iterationMode: "single"` and `sourceDataPath: null`. This sub-mapping runs once after all previous nodes and relationships have been processed. Inside this final step, the relationship is defined using `$root` to access the top-level `CodeRepository` and `$global` to access the collection of processed `CodeBlock` nodes, filtering them using a JSONPath expression.
+
+**`mapping.json`:**
+
+```json
+{
+    "iterationMode": "collection",
+    "nodes": [
+        {
+            "type": "CodeRepository",
+            "idStrategy": "fromData",
+            "idField": "url",
+            "properties": [
+                {
+                    "name": "url",
+                    "path": "url"
+                },
+                {
+                    "name": "commitHash",
+                    "path": "commitHash"
+                },
+                {
+                    "name": "branch",
+                    "path": "branch"
+                }
+            ]
+        }
+    ],
+    "relationships": [],
+    "subMappings": [
+        {
+            "iterationMode": "collection",
+            "sourceDataPath": "components",
+            "nodes": [
+                {
+                    "type": "CodeBlock",
+                    "idStrategy": "fromData",
+                    "idField": "file.hash",
+                    "isReference": true, // Mark as reference to populate global context
+                    "properties": [
+                        {
+                            "name": "name",
+                            "path": "id"
+                        },
+                        {
+                            "name": "lineOfCodes",
+                            "path": "file.lineOfCodes",
+                            "type": "integer"
+                        },
+                        {
+                            "name": "filePath",
+                            "path": "file.path.absoluteFromRootDir"
+                        },
+                        {
+                            "name": "code",
+                            "path": "code"
+                        },
+                        {
+                            "name": "hash",
+                            "path": "file.hash"
+                        },
+                        {
+                            "name": "isEntryPoint", // Property used for filtering
+                            "path": "isEntryPoint"
+                        }
+                    ]
+                }
+            ],
+            "relationships": [], // Relationships specific to this level (e.g., IMPORTS) can go here
+            "subMappings": [
+                // Other nested mappings related to CodeBlock...
+            ]
+        },
+        // Final subMapping to create the HAS_ENTRYPOINT relationship
+        {
+            "iterationMode": "single", // Ensures this runs once after all components are processed
+            "sourceDataPath": null, // No specific data item needed here
+            "nodes": [],
+            "relationships": [
+                {
+                    "type": "HAS_ENTRYPOINT",
+                    "isReference": true, // Use MERGE for relationship creation
+                    "from": {
+                        "path": "$root.CodeRepository.id" // Get Repository ID from the root context
+                    },
+                    "to": {
+                        // Get IDs of CodeBlocks from global context where isEntryPoint is true
+                        "path": "$global.CodeBlock[?(@.isEntryPoint == true)].id"
+                    }
+                }
+            ]
+        }
+    ]
+}
+```
+
+This pattern ensures that relationships depending on properties set across different levels or sub-mappings are created reliably after the necessary context is built.
+
 ## API Reference 📖
 
 ### Constructor
@@ -394,7 +498,7 @@ constructor(
 *   Nested mappings
 *   Reference nodes
 *   JSONPath usage
-*   Relationship contexts (`$current`, `$parent`)
+*   Relationship contexts (`$current`, `$parent`, `$global`)
 
 ## Best Practices 👍⭐
 

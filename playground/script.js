@@ -19,6 +19,38 @@ document.addEventListener('DOMContentLoaded', function() {
     shareBtnContainer.appendChild(shareBtn);
     generateBtn.parentNode.insertBefore(shareBtnContainer, generateBtn.nextSibling);
     
+    // --- Add \"Hide All Initially\" Checkbox ---
+    const graphOptionsContainer = document.createElement('div');
+    graphOptionsContainer.className = 'form-group mt-2'; // Add some margin top
+    
+    const hideAllContainer = document.createElement('div');
+    hideAllContainer.className = 'form-check'; // Bootstrap styling
+
+    const hideAllCheckbox = document.createElement('input');
+    hideAllCheckbox.type = 'checkbox';
+    hideAllCheckbox.className = 'form-check-input'; // Bootstrap styling
+    hideAllCheckbox.id = 'hide-all-checkbox';
+
+    const hideAllLabel = document.createElement('label');
+    hideAllLabel.className = 'form-check-label'; // Bootstrap styling
+    hideAllLabel.htmlFor = 'hide-all-checkbox';
+    hideAllLabel.textContent = 'Hide All Initially';
+    
+    hideAllContainer.appendChild(hideAllCheckbox);
+    hideAllContainer.appendChild(hideAllLabel);
+    graphOptionsContainer.appendChild(hideAllContainer);
+
+    // Insert the checkbox container after the example loader section
+    const actionsDiv = document.querySelector('.actions'); // Find the actions div
+    if (actionsDiv && actionsDiv.parentNode) {
+        actionsDiv.parentNode.insertBefore(graphOptionsContainer, actionsDiv); // Insert before actions div
+    } else {
+        // Fallback if structure is unexpected, append to main container
+        document.querySelector('main.app-container')?.appendChild(graphOptionsContainer);
+        console.warn('Could not find .actions div, appended checkbox to main container as fallback.');
+    }
+    // --- End Add Checkbox ---
+
     // Initialize JSON editors
     const jsonEditor = new JSONEditor(document.getElementById('json-editor'), {
         mode: 'code',
@@ -391,8 +423,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Extract relationship information
-            if (query.includes('CREATE (source)-[') && queryObj.params.fromId && queryObj.params.toId) {
-                const relTypeMatch = query.match(/CREATE \(source\)-\[\w+:(\w+)\]->/);
+            if ((query.includes('CREATE (source)-[') || query.includes('MERGE (source)-[') ) && queryObj.params.fromId && queryObj.params.toId) {
+                const relTypeMatch = query.match(/CREATE \(source\)-\[\w+:(\w+)\]->|MERGE \(source\)-\[\w+:(\w+)\]->/);
                 // Basic check: Add edge if type is found
                 if (relTypeMatch) {
                     const relType = relTypeMatch[1];
@@ -481,10 +513,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        // --- Check "Hide All" state ---
+        const hideAllInitially = document.getElementById('hide-all-checkbox')?.checked ?? false;
+        // ---
+
         // Initialize Cytoscape with simple settings
         const cy = cytoscape({
             container: cyContainer,
-            elements: { nodes, edges },
+            elements: { 
+                nodes: nodes.map(n => ({ ...n, classes: hideAllInitially ? 'hidden-element' : '' })),
+                edges: edges.map(e => ({ ...e, classes: hideAllInitially ? 'hidden-element' : '' })) 
+            },
             style: [
                 {
                     selector: 'node',
@@ -618,8 +657,10 @@ document.addEventListener('DOMContentLoaded', function() {
             legendItem.addEventListener('click', () => {
                 const nodesOfType = cy.nodes(`[type = "${nodeType}"]`);
                 const connectedEdges = nodesOfType.connectedEdges();
-                const elementsToToggle = nodesOfType.union(connectedEdges);
-                
+                // --- Use union for cleaner element selection ---
+                const elementsToToggle = nodesOfType.union(connectedEdges); 
+                // ---
+
                 const isHidden = legendItem.classList.toggle('hidden-legend');
                 
                 cy.batch(() => { // Use batch for performance
@@ -656,7 +697,9 @@ document.addEventListener('DOMContentLoaded', function() {
              mergeLegendItem.addEventListener('click', () => {
                 const mergeNodes = cy.nodes('[isMerge = true]');
                 const connectedEdges = mergeNodes.connectedEdges();
+                // --- Use union for cleaner element selection ---
                 const elementsToToggle = mergeNodes.union(connectedEdges);
+                // ---
 
                 const isHidden = mergeLegendItem.classList.toggle('hidden-legend');
 
