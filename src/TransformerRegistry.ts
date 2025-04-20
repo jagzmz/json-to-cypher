@@ -2,8 +2,8 @@
 export interface NodeDefinition {
   type: string;
   isReference?: boolean; // If true, uses MERGE instead of CREATE
-  idStrategy: 'fixed' | 'uuid' | 'fromData';
-  idField?: string; // Used when idStrategy is 'fromData'
+  idStrategy: 'fixed' | 'uuid' | 'fromData' | 'expression';
+  idField?: string; // Used when idStrategy is 'fromData' or 'expression'
   idValue?: string; // Used when idStrategy is 'fixed'
   properties: PropertyDefinition[];
 }

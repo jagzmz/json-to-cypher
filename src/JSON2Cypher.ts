@@ -284,7 +284,7 @@ export class JSON2Cypher {
       // Pre-generate all node IDs first
       const nodeIds: Record<string, string> = {};
       for (const nodeDef of schema.nodes) {
-        nodeIds[nodeDef.type] = this.generateNodeId(nodeDef, item);
+        nodeIds[nodeDef.type] = this.generateNodeId(nodeDef, item, itemContext);
       }
 
       // Create nodes from node definitions
@@ -551,7 +551,7 @@ export class JSON2Cypher {
     return [];
   }
 
-  private generateNodeId(nodeDef: NodeDefinition, data: any): string {
+  private generateNodeId(nodeDef: NodeDefinition, data: any, context: any): string {
     const idField = nodeDef.idField || "id"; // Default to 'id'
     switch (nodeDef.idStrategy) {
       case "fixed":
@@ -571,6 +571,52 @@ export class JSON2Cypher {
           );
         }
         return String(idValue); // Ensure ID is a string
+      case "expression":
+        const expression = nodeDef.idField; // Use idField for the expression
+        if (!expression) {
+          throw new Error(
+            `Expression ID strategy requires an idField containing the expression for node type ${nodeDef.type}`
+          );
+        }
+        try {
+            // Use the Function constructor to evaluate the expression string.
+            // Pass the entire context object and its relevant parts as arguments.
+            const evaluator = new Function(
+                "ctx",      // The full context object
+                "$data",    // context.data
+                "$index",   // context.index
+                "$parent",  // context.parent
+                "$root",    // context.root
+                "$current", // context.current
+                "$global",  // context.global
+                // The expression string itself uses these arguments
+                `return (${expression});` 
+            );
+            // Call the evaluator with the corresponding values from the context
+            const result = evaluator(
+                context,        // ctx
+                context.data,   // $data
+                context.index,  // $index
+                context.parent, // $parent
+                context.root,   // $root
+                context.current,// $current
+                context.global  // $global
+            );
+
+            if (result === null || result === undefined) {
+                throw new Error(`Expression evaluated to null or undefined.`);
+            }
+            return String(result); // Ensure the final ID is a string
+        } catch (e: any) {
+          console.error(
+            `Error evaluating ID expression "${expression}" for node type ${nodeDef.type}:`,
+            context, // Log context for debugging
+            e
+          );
+          throw new Error(
+            `Failed to evaluate ID expression "${expression}" for node type ${nodeDef.type}. Original error: ${e.message}`
+          );
+        }
       case "uuid":
       default:
         // The browser build will replace this via replace-uuid plugin

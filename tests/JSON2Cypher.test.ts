@@ -1276,4 +1276,115 @@ describe("JSON2Cypher", () => {
       expect(allEntryPointRels.length).toBe(1);
     });
   });
+
+  describe("idStrategy: expression", () => {
+    it("should generate ID using a simple expression on data", async () => {
+      const expressionSchema: SchemaMapping = {
+        nodes: [
+          {
+            type: "Item",
+            idStrategy: "expression",
+            // Use $data instead of data
+            idField: "'item-' + $data.code.toLowerCase() + '-' + $data.version", 
+            properties: [
+              { name: "name", path: "name" },
+            ],
+          },
+        ],
+        relationships: [],
+        iterationMode: "single",
+      };
+
+      const expressionData = {
+        code: "ABC",
+        version: 123,
+        name: "Test Item",
+      };
+
+      const expressionMapper = new JSON2Cypher(expressionSchema);
+      const { queries } = await expressionMapper.generateQueries(expressionData);
+
+      expect(queries.length).toBe(1); // Only one node
+      const createQuery = queries[0];
+      
+      // Verify the ID was generated correctly by the expression
+      expectCreateNodeQuery(createQuery, "Item", "item-abc-123", {
+        name: "Test Item",
+      });
+    });
+
+    it("should generate ID using an expression involving context (e.g., $index)", async () => {
+      const contextExpressionSchema: SchemaMapping = {
+        nodes: [
+          {
+            type: "IndexedItem",
+            idStrategy: "expression",
+            // Remove extra quotes/escapes, use context variables directly
+            idField: "$parent.prefix + '-' + String($index)", // Access parent context and index
+            properties: [
+              { name: "value", path: "value" },
+            ],
+          },
+        ],
+        relationships: [],
+        iterationMode: "collection", // Process as a collection
+      };
+
+      const contextExpressionData = [
+        { value: "A" },
+        { value: "B" },
+        { value: "C" },
+      ];
+      
+      // Simulate a parent context providing a prefix
+      const parentContextForTest = {
+        current: { prefix: "runXYZ" } // Mock parent context
+      };
+
+      const expressionMapper = new JSON2Cypher(contextExpressionSchema);
+      // Need to manually invoke mapDataToGraph to pass the parent context
+      const mapDataMethod = (expressionMapper as any).mapDataToGraph.bind(expressionMapper);
+      const processedNodesMap = new Map<string, { id: string; type: string; properties: Record<string, any>; isReference: boolean }>();
+
+      const { nodes } = await mapDataMethod(
+        contextExpressionSchema, 
+        contextExpressionData, 
+        processedNodesMap,
+        parentContextForTest // Pass the simulated parent context
+      );
+
+      expect(nodes.length).toBe(3);
+      expect(nodes[0].id).toBe("runXYZ-0");
+      expect(nodes[1].id).toBe("runXYZ-1");
+      expect(nodes[2].id).toBe("runXYZ-2");
+      expectNodeProps(nodes[0], { value: "A" });
+      expectNodeProps(nodes[1], { value: "B" });
+      expectNodeProps(nodes[2], { value: "C" });
+    });
+
+     it("should throw an error if expression evaluation fails", async () => {
+      const badExpressionSchema: SchemaMapping = {
+        nodes: [
+          {
+            type: "BadItem",
+            idStrategy: "expression",
+            // Use $data instead of data
+            idField: "$data.nonExistent.property", // This will fail
+            properties: [
+              { name: "name", path: "name" },
+            ],
+          },
+        ],
+        relationships: [],
+        iterationMode: "single",
+      };
+
+      const badData = { name: "Test" };
+      const badMapper = new JSON2Cypher(badExpressionSchema);
+
+      await expect(badMapper.generateQueries(badData)).rejects.toThrow(
+        /Failed to evaluate ID expression/ // Check for the specific error message
+      );
+    });
+  });
 });
