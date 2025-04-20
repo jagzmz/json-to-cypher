@@ -1,6 +1,6 @@
 {
   "name": "@jagzmz/json-to-cypher",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Convert JSON to Cypher queries",
   "type": "module",
   "main": "./dist/index.cjs",
