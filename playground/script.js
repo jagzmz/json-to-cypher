@@ -369,11 +369,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return queryItem;
     }
 
-    // Graph visualization using Cytoscape.js
+    // Graph visualization using D3.js
     function visualizeGraph(queries) {
         // Clear previous content
         graphVis.innerHTML = '';
-        
         if (!queries || queries.length === 0) {
             const message = document.createElement('div');
             message.textContent = 'No queries generated to visualize.';
@@ -383,338 +382,166 @@ document.addEventListener('DOMContentLoaded', function() {
             graphVis.appendChild(message);
             return;
         }
-        
-        // Original (simpler) Node and Edge Extraction
+
+        // Extract nodes and edges
         const nodes = [];
         const edges = [];
-        const nodeMap = new Map(); // Track nodes we've already added
-        const nodeTypes = new Set(); // Track node types for coloring
-        
-        queries.forEach((queryObj) => {
-            const query = queryObj.query;
-            
-            // Extract node information from CREATE or MERGE statements
-            if (query.includes('CREATE (') || query.includes('MERGE (')) {
-                const match = query.match(/(?:CREATE|MERGE) \((\w+):(\w+)/);
-                if (match) {
-                    const [, varName, nodeType] = match;
-                    const nodeId = queryObj.params[`id_${varName}`];
-                    
-                    // Only add node if we haven't seen it before
-                    if (!nodeMap.has(nodeId) && nodeId) {
-                        const properties = queryObj.params[`props_${varName}`] || {};
-                        let label = properties.name || properties.title || nodeType;
-                        
-                        nodeTypes.add(nodeType);
-                        
-                        nodes.push({
-                            data: {
-                                id: nodeId,
-                                label: label,
-                                type: nodeType,
-                                isMerge: queryObj.isMerge,
-                                ...properties
-                            }
-                        });
-                        
-                        nodeMap.set(nodeId, true);
-                    }
+        const nodeMap = new Map();
+        const nodeTypes = new Set();
+        queries.forEach(queryObj => {
+            const q = queryObj.query;
+            const nodeMatch = q.match(/\b(?:CREATE|MERGE) \((\w+):(\w+)/);
+            if (nodeMatch) {
+                const varName = nodeMatch[1], nt = nodeMatch[2];
+                const id = queryObj.params[`id_${varName}`];
+                if (id && !nodeMap.has(id)) {
+                    const props = queryObj.params[`props_${varName}`] || {};
+                    const lbl = props.name || props.title || nt;
+                    nodes.push({ id, type: nt, label: lbl, isMerge: queryObj.isMerge });
+                    nodeMap.set(id, true);
+                    nodeTypes.add(nt);
                 }
             }
-            
-            // Extract relationship information
-            if ((query.includes('CREATE (source)-[') || query.includes('MERGE (source)-[') ) && queryObj.params.fromId && queryObj.params.toId) {
-                const relTypeMatch = query.match(/CREATE \(source\)-\[\w+:(\w+)\]->|MERGE \(source\)-\[\w+:(\w+)\]->/);
-                // Basic check: Add edge if type is found
-                if (relTypeMatch) {
-                    const relType = relTypeMatch[1];
-                    edges.push({
-                        data: {
-                            id: `${queryObj.params.fromId}-${relType}-${queryObj.params.toId}-${Math.random().toString(16).slice(2)}`,
-                            source: queryObj.params.fromId,
-                            target: queryObj.params.toId,
-                            label: relType
-                        }
-                    });
-                }
+            const relMatch = q.match(/\b(?:CREATE|MERGE) \([^)]+\)-\[\w+:(\w+)\]->/);
+            if (relMatch && queryObj.params.fromId && queryObj.params.toId) {
+                edges.push({ source: queryObj.params.fromId, target: queryObj.params.toId, type: relMatch[1] });
             }
         });
 
-        if (nodes.length === 0 && edges.length === 0 && queries.length > 0) {
-            const message = document.createElement('div');
-            message.textContent = 'Could not extract visual elements from queries.';
-            message.style.textAlign = 'center';
-            message.style.padding = '2rem';
-            message.style.color = '#78909c';
-            graphVis.appendChild(message);
-            return;
-        }
-
-        // --- Cytoscape Initialization and Configuration (Using simple cose layout) ---
-        // Create cytoscape container first
-        const cyContainer = document.createElement('div');
-        cyContainer.className = 'cy-container';
-        // Explicitly set style to ensure dimensions are recognized
-        cyContainer.style.width = '100%';
-        cyContainer.style.height = '100%'; 
-        graphVis.appendChild(cyContainer);
-        
-        // Create container for graph controls
+        // Set up SVG
+        const width = graphVis.clientWidth, height = graphVis.clientHeight;
+        const svg = d3.select(graphVis).append('svg').attr('width', width).attr('height', height);
+        const g = svg.append('g');
+        const zoom = d3.zoom().scaleExtent([0.1, 8]).on('zoom', event => g.attr('transform', event.transform));
+        svg.call(zoom);
+        // Create graph controls
         const graphControls = document.createElement('div');
         graphControls.className = 'graph-controls';
-        
-        // Control buttons with icon-only design
         const zoomInBtn = document.createElement('button');
         zoomInBtn.className = 'graph-control-btn';
         zoomInBtn.innerHTML = '+';
         zoomInBtn.title = 'Zoom In';
-        
         const zoomOutBtn = document.createElement('button');
         zoomOutBtn.className = 'graph-control-btn';
         zoomOutBtn.innerHTML = '−';
         zoomOutBtn.title = 'Zoom Out';
-        
         const fitBtn = document.createElement('button');
         fitBtn.className = 'graph-control-btn';
         fitBtn.innerHTML = '⤢';
         fitBtn.title = 'Fit Graph';
-        
         const centerBtn = document.createElement('button');
         centerBtn.className = 'graph-control-btn';
         centerBtn.innerHTML = '⦿';
         centerBtn.title = 'Center View';
-        
         graphControls.appendChild(zoomInBtn);
         graphControls.appendChild(zoomOutBtn);
         graphControls.appendChild(fitBtn);
         graphControls.appendChild(centerBtn);
-        
         graphVis.appendChild(graphControls);
-        
-        // Node colors based on node type - using Google Material palette 
-        const nodeTypeColors = {
-            'User': '#4285F4',       // Google Blue
-            'Company': '#34A853',    // Google Green
-            'Post': '#FBBC05',       // Google Yellow
-            'Comment': '#EA4335',    // Google Red
-            'Product': '#8E24AA',    // Purple
-            'Category': '#D81B60',   // Pink
-            'Order': '#00ACC1',      // Cyan
-            'Customer': '#6D4C41',   // Brown
-            'Tag': '#5C6BC0',        // Indigo
-            'default': '#9E9E9E'     // Gray for unknown types
-        };
 
-        // Ensure all node types have a color assigned
-        const assignedColors = { ...nodeTypeColors }; // Clone predefined colors
-        Array.from(nodeTypes).forEach(type => {
-            if (!assignedColors[type] && type !== 'default') { // Don't overwrite explicit default
-                assignedColors[type] = stringToColor(type); // Generate and assign color
-            }
+        // Arrow marker
+        const defs = svg.append('defs');
+        defs.append('marker').attr('id', 'arrow').attr('viewBox', '0 -5 10 10')
+            .attr('refX', 15).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6)
+            .attr('orient', 'auto')
+          .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#999');
+
+        // Color mapping
+        const baseColors = { default: '#9E9E9E' };
+        const nodeTypeColors = { User: '#4285F4', Company: '#34A853', Post: '#FBBC05', Comment: '#EA4335', Product: '#8E24AA', Category: '#D81B60', Order: '#00ACC1', Customer: '#6D4C41', Tag: '#5C6BC0' };
+        const assignedColors = { ...baseColors };
+        nodeTypes.forEach(t => assignedColors[t] = nodeTypeColors[t] || stringToColor(t));
+
+        // Initialize simulation
+        const simulation = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(edges).id(d => d.id).distance(120).strength(1))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width / 2, height / 2));
+
+        // Draw links
+        const link = g.append('g').attr('class', 'links').selectAll('path')
+            .data(edges).enter().append('path').attr('class', 'link')
+            .attr('stroke', '#999').attr('stroke-width', 2).attr('fill', 'none')
+            .attr('marker-end', 'url(#arrow)');
+
+        // Draw nodes
+        const node = g.append('g').attr('class', 'nodes').selectAll('g')
+            .data(nodes).enter().append('g').attr('class', 'node')
+            .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
+        node.append('circle').attr('r', 12).attr('fill', d => assignedColors[d.type] || assignedColors.default)
+            .attr('stroke', d => d.isMerge ? '#37474f' : 'none').attr('stroke-width', d => d.isMerge ? 3 : 0);
+        node.append('text').text(d => d.label)
+            .attr('x', 0).attr('y', 16).attr('text-anchor', 'middle')
+            .attr('font-size', '12px').attr('fill', '#37474f');
+
+        simulation.on('tick', () => {
+            link.attr('d', d => `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`);
+            node.attr('transform', d => `translate(${d.x},${d.y})`);
         });
-
-        // --- Check "Hide All" state ---
+        // Hide all initially if checkbox checked
         const hideAllInitially = document.getElementById('hide-all-checkbox')?.checked ?? false;
-        // ---
+        if (hideAllInitially) {
+            node.attr('display', 'none');
+            link.attr('display', 'none');
+        }
 
-        // Initialize Cytoscape with simple settings
-        const cy = cytoscape({
-            container: cyContainer,
-            elements: { 
-                nodes: nodes.map(n => ({ ...n, classes: hideAllInitially ? 'hidden-element' : '' })),
-                edges: edges.map(e => ({ ...e, classes: hideAllInitially ? 'hidden-element' : '' })) 
-            },
-            style: [
-                {
-                    selector: 'node',
-                    style: {
-                        'background-color': (ele) => {
-                            const nodeType = ele.data('type');
-                            // Use the potentially generated color map
-                            return assignedColors[nodeType] || assignedColors.default;
-                        },
-                        'border-width': (ele) => ele.data('isMerge') ? 3 : 0,
-                        'border-color': '#37474f',
-                        'label': 'data(label)',
-                        'text-valign': 'bottom',
-                        'text-halign': 'center',
-                        'color': '#37474f',
-                        'font-size': '12px',
-                        'text-background-color': 'white',
-                        'text-background-opacity': 0.8,
-                        'text-background-padding': '2px'
-                    }
-                },
-                {
-                    selector: 'edge',
-                    style: {
-                        'width': 2,
-                        'line-color': '#999',
-                        'target-arrow-color': '#999',
-                        'target-arrow-shape': 'triangle',
-                        'curve-style': 'bezier',
-                        'label': 'data(label)',
-                        'font-size': '11px',
-                        'text-rotation': 'autorotate',
-                        'text-background-color': 'white',
-                        'text-background-opacity': 0.8,
-                        'text-background-padding': '2px'
-                    }
-                },
-                {
-                    selector: '.hidden-element', // Style for hidden elements
-                    style: {
-                        'display': 'none'
-                    }
-                }
-            ],
-            layout: {
-                name: 'cose', // Back to default cose
-                padding: 60,
-                animate: false,
-                componentSpacing: 100,
-                nodeRepulsion: function(node) { return 600000; },
-                edgeElasticity: function(edge) { return 80; }, 
-                idealEdgeLength: function(edge) { return 120; },
-                gravity: 100,
-                fit: true
-            }
-        });
-        
-        // Run the layout and then resize/fit
-        const layout = cy.layout({
-            name: 'cose',
-            padding: 60,
-            animate: false,
-            componentSpacing: 100,
-            nodeRepulsion: function(node) { return 600000; },
-            edgeElasticity: function(edge) { return 80; }, 
-            idealEdgeLength: function(edge) { return 120; },
-            gravity: 100,
-            fit: true
-        });
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x; d.fy = d.y;
+        }
+        function dragged(event, d) {
+            d.fx = event.x; d.fy = event.y;
+        }
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null; d.fy = null;
+        }
 
-        layout.one('layoutstop', () => {
-            console.log("Layout stopped, resizing and fitting...");
-            cy.resize();
-            cy.fit(60); // Refit with padding after resize
-        });
+        // Controls
+        zoomInBtn.addEventListener('click', () => svg.transition().call(zoom.scaleBy, 1.2));
+        zoomOutBtn.addEventListener('click', () => svg.transition().call(zoom.scaleBy, 0.8));
+        fitBtn.addEventListener('click', () => svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity));
+        centerBtn.addEventListener('click', () => svg.transition().duration(500).call(zoom.translateTo, width / 2, height / 2));
 
-        layout.run();
-        
-        // Add event handlers for controls
-        zoomInBtn.addEventListener('click', () => {
-            cy.zoom({
-                level: cy.zoom() * 1.2,
-                renderedPosition: { x: cyContainer.clientWidth / 2, y: cyContainer.clientHeight / 2 }
-            });
-        });
-        
-        zoomOutBtn.addEventListener('click', () => {
-            cy.zoom({
-                level: cy.zoom() * 0.8,
-                renderedPosition: { x: cyContainer.clientWidth / 2, y: cyContainer.clientHeight / 2 }
-            });
-        });
-        
-        centerBtn.addEventListener('click', () => {
-            cy.center();
-            cy.zoom(1);
-        });
-        
-        fitBtn.addEventListener('click', () => {
-            cy.fit(60);
-        });
-        
-        // Add stats
+        // Stats
         const stats = document.createElement('div');
         stats.className = 'graph-stats';
         stats.innerHTML = `<strong>${nodes.length}</strong> nodes, <strong>${edges.length}</strong> relationships`;
         graphVis.appendChild(stats);
-        
-        // Add legend for node types
+
+        // Legend
         const legend = document.createElement('div');
         legend.className = 'graph-legend';
-        
-        // Add legend items for each node type
-        Array.from(nodeTypes).sort().forEach(nodeType => {
-            const legendItem = document.createElement('div');
-            legendItem.className = 'graph-legend-item';
-            
-            const colorBox = document.createElement('span');
-            colorBox.className = 'graph-legend-color';
-            // Use the potentially generated color map for the legend as well
-            colorBox.style.backgroundColor = assignedColors[nodeType] || assignedColors.default;
-            
-            const label = document.createElement('span');
-            label.textContent = nodeType;
-            
-            legendItem.appendChild(colorBox);
-            legendItem.appendChild(label);
-            legend.appendChild(legendItem);
-
-            // Add click listener for toggling visibility
-            legendItem.addEventListener('click', () => {
-                const nodesOfType = cy.nodes(`[type = "${nodeType}"]`);
-                const connectedEdges = nodesOfType.connectedEdges();
-                // --- Use union for cleaner element selection ---
-                const elementsToToggle = nodesOfType.union(connectedEdges); 
-                // ---
-
-                const isHidden = legendItem.classList.toggle('hidden-legend');
-                
-                cy.batch(() => { // Use batch for performance
-                    if (isHidden) {
-                        elementsToToggle.addClass('hidden-element');
-                    } else {
-                        elementsToToggle.removeClass('hidden-element');
-                        // Ensure connected nodes that might have been hidden via other types are shown
-                        connectedEdges.connectedNodes().removeClass('hidden-element');
-                    }
-                });
+        nodeTypes.forEach(type => {
+            const item = document.createElement('div');
+            item.className = 'graph-legend-item';
+            const cb = document.createElement('span');
+            cb.className = 'graph-legend-color';
+            cb.style.backgroundColor = assignedColors[type];
+            const lbl = document.createElement('span');
+            lbl.textContent = type;
+            item.appendChild(cb); item.appendChild(lbl);
+            item.addEventListener('click', () => {
+                const hidden = item.classList.toggle('hidden-legend');
+                node.filter(d => d.type === type).attr('display', hidden ? 'none' : null);
+                link.filter(d => d.source.type === type || d.target.type === type)
+                    .attr('display', hidden ? 'none' : null);
             });
+            legend.appendChild(item);
         });
-        
-        // Add merge node indicator to legend if needed
-        if (nodes.some(node => node.data.isMerge)) {
-            const mergeLegendItem = document.createElement('div');
-            mergeLegendItem.className = 'graph-legend-item';
-            
-            const colorBox = document.createElement('span');
-            colorBox.className = 'graph-legend-color';
-            // Revert to original styling for MERGE indicator
-            colorBox.style.backgroundColor = 'white';
-            colorBox.style.border = '3px solid #37474f';
-            
-            const label = document.createElement('span');
-            label.textContent = 'MERGE (Ref)';
-            
-            mergeLegendItem.appendChild(colorBox);
-            mergeLegendItem.appendChild(label);
-            legend.appendChild(mergeLegendItem);
-
-            // Add click listener for toggling MERGE node visibility
-             mergeLegendItem.addEventListener('click', () => {
-                const mergeNodes = cy.nodes('[isMerge = true]');
-                const connectedEdges = mergeNodes.connectedEdges();
-                // --- Use union for cleaner element selection ---
-                const elementsToToggle = mergeNodes.union(connectedEdges);
-                // ---
-
-                const isHidden = mergeLegendItem.classList.toggle('hidden-legend');
-
-                cy.batch(() => {
-                    if (isHidden) {
-                        elementsToToggle.addClass('hidden-element');
-                    } else {
-                        elementsToToggle.removeClass('hidden-element');
-                        // Ensure connected nodes that might have been hidden via other types are shown
-                        connectedEdges.connectedNodes().removeClass('hidden-element');
-                    }
-                });
+        if (nodes.some(d => d.isMerge)) {
+            const mi = document.createElement('div'); mi.className = 'graph-legend-item';
+            const cb = document.createElement('span'); cb.className = 'graph-legend-color'; cb.style.backgroundColor = 'white'; cb.style.border = '3px solid #37474f';
+            const lbl = document.createElement('span'); lbl.textContent = 'MERGE (Ref)';
+            mi.appendChild(cb); mi.appendChild(lbl);
+            mi.addEventListener('click', () => {
+                const hidden = mi.classList.toggle('hidden-legend');
+                node.filter(d => d.isMerge).attr('display', hidden ? 'none' : null);
+                link.filter(d => d.source.isMerge || d.target.isMerge)
+                    .attr('display', hidden ? 'none' : null);
             });
+            legend.appendChild(mi);
         }
-        
         graphVis.appendChild(legend);
     }
 
