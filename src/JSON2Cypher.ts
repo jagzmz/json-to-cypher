@@ -655,7 +655,15 @@ export class JSON2Cypher {
       if (propDef.transformerId) {
         const transformer = this.transformerRegistry.get(propDef.transformerId);
         if (transformer) {
-          value = transformer(value, context, propDef.transformerParams);
+          try {
+            value = transformer(value, context, propDef.transformerParams);
+          } catch (e) {
+            console.error(
+              `Error in transformer '${propDef.transformerId}' for property '${propDef.name}' on node type '${nodeDef.type}':`,
+              e
+            );
+            value = undefined; // Fallback to undefined so that default/type conversion logic can apply
+          }
         }
       }
 
