@@ -1,0 +1,5 @@
+JSON-to-Cypher Mapper (JSON2Cypher) is a lightweight TypeScript library designed to convert arbitrary JSON data into executable Cypher queries for Neo4j. By defining a simple, declarative schema, you can automate the creation of nodes and relationships, map JSON fields to properties, and handle complex nested structures with ease.
+
+At its core, JSON2Cypher uses configurable mapping rules to generate `CREATE` and `MERGE` statements along with parameter objects. You can choose unique ID strategies (UUID, data-driven, or fixed), apply JSONPath expressions to extract and transform values, and merge reference nodes to prevent duplicates. The library also supports custom transformers and default values, giving you fine-grained control over how your data is modeled in the graph.
+
+Integration with Neo4j is straightforward: simply import the generated queries into your driver of choice (e.g., `neo4j-driver`) and execute them against your database. JSON2Cypher removes boilerplate from data import pipelines, accelerates prototyping, and ensures consistency when loading JSON-based datasets into graph structures.
