@@ -26,7 +26,8 @@
     "build:browser": "tsup --config tsup.browser.config.ts && cp dist/index.global.js playground",
     "prepublishOnly": "pnpm run build",
     "playground:deploy": "npm run build:browser",
-    "playground:serve": "npm run build:browser && cd playground && npx http-server -o"
+    "playground:serve": "npm run build:browser && cd playground && npx http-server -o",
+    "examples": "npm run build && node examples.js"
   },
   "keywords": [
     "json",

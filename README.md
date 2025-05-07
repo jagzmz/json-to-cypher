@@ -38,6 +38,10 @@ interface SchemaMapping {
 }
 ```
 
+## Examples
+
+For additional usage examples demonstrating nested data, reference nodes, complex relationships, and custom transformers, see [examples.js](./examples.js).
+
 ### 2. Defining Nodes (`NodeDefinition`)
 
 Each `NodeDefinition` specifies how to create nodes of a certain type (label) in Neo4j.
