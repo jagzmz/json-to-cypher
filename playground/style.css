@@ -672,4 +672,9 @@ footer a:hover {
     opacity: 0.5;
     text-decoration: line-through;
     cursor: pointer; /* Maintain pointer cursor */
-} 
+}
+
+/* Change cursor to pointer on node hover */
+.graph-container g.node:hover {
+    cursor: pointer;
+}

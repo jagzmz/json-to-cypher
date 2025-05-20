@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Arrow marker
         const defs = svg.append('defs');
         defs.append('marker').attr('id', 'arrow').attr('viewBox', '0 -5 10 10')
-            .attr('refX', 15).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6)
+            .attr('refX', 18).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6)
             .attr('orient', 'auto')
           .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#999');
 
@@ -467,12 +467,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw nodes
         const node = g.append('g').attr('class', 'nodes').selectAll('g')
             .data(nodes).enter().append('g').attr('class', 'node')
-            .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
+            .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended))
+            .on('mouseover', function (event, d) {
+                d3.select(this).select('circle').transition().duration(150).attr('r', 18);
+            })
+            .on('mouseout', function (event, d) {
+                d3.select(this).select('circle').transition().duration(150).attr('r', 12);
+            });
         node.append('circle').attr('r', 12).attr('fill', d => assignedColors[d.type] || assignedColors.default)
             .attr('stroke', d => d.isMerge ? '#37474f' : 'none').attr('stroke-width', d => d.isMerge ? 3 : 0);
         node.append('text').text(d => d.label)
-            .attr('x', 0).attr('y', 16).attr('text-anchor', 'middle')
-            .attr('font-size', '12px').attr('fill', '#37474f');
+            .attr('x', 0).attr('y', 4).attr('text-anchor', 'middle')
+            .attr('font-size', '10px').attr('fill', 'white') // Adjusted font size slightly for better fit
+            .style('pointer-events', 'none'); // Ensure text doesn't interfere with mouse events on circle
 
         simulation.on('tick', () => {
             link.attr('d', d => `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`);
