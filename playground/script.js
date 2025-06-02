@@ -469,12 +469,12 @@ document.addEventListener('DOMContentLoaded', function() {
             .data(nodes).enter().append('g').attr('class', 'node')
             .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended))
             .on('mouseover', function (event, d) {
-                d3.select(this).select('circle').transition().duration(150).attr('r', 18);
+                d3.select(this).select('circle').transition().duration(150).attr('r', 22);
             })
             .on('mouseout', function (event, d) {
-                d3.select(this).select('circle').transition().duration(150).attr('r', 12);
+                d3.select(this).select('circle').transition().duration(150).attr('r', 17);
             });
-        node.append('circle').attr('r', 12).attr('fill', d => assignedColors[d.type] || assignedColors.default)
+        node.append('circle').attr('r', 17).attr('fill', d => assignedColors[d.type] || assignedColors.default)
             .attr('stroke', d => d.isMerge ? '#37474f' : 'none').attr('stroke-width', d => d.isMerge ? 3 : 0);
         node.append('text').text(d => d.label)
             .attr('x', 0).attr('y', 4).attr('text-anchor', 'middle')
